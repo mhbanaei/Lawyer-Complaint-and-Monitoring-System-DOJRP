@@ -168,7 +168,9 @@ function finalRulingEmbed(c) {
 
   const outcome = c.finalRuling.outcome === 'plaintiff'
     ? '✅ پرونده به نفع شاکی ختم شد.'
-    : '❌ پرونده به نفع مشتکی‌عنه ختم شد.';
+    : c.finalRuling.outcome === 'defendant'
+      ? '❌ پرونده به نفع مشتکی‌عنه ختم شد.'
+      : '⚖️ پرونده مختومه شد — بدون برد و باخت برای وکلای طرفین.';
   e.addFields(
     { name: '🔨 رأی نهایی قاضی', value: outcome, inline: false },
     { name: '📜 متن رأی', value: clipField(c.finalRuling.text), inline: false },
@@ -248,7 +250,7 @@ function vakilListEmbed(rows, { onlineMap }) {
         casesTxt = 'هنوز پرونده‌ای نپذیرفته است';
       } else {
         const parts = recs.slice(0, 8).map((r) => {
-          const res = r.outcome === null ? '' : (r.won ? ' 🏆' : ' 📉');
+          const res = r.outcome === null ? '' : (r.outcome === 'dismissed' ? ' ⚖️' : (r.won ? ' 🏆' : ' 📉'));
           return `#${fa.digits(r.number)} (${r.side === 'plaintiff' ? 'شاکی' : 'مشتکی‌عنه'})${res}`;
         });
         const extra = recs.length > 8 ? ` … و ${fa.num(recs.length - 8)} مورد دیگر` : '';

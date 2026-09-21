@@ -183,7 +183,11 @@ function sessionScheduledDM(c) {
 
 /** متن پیام خصوصی پس از صدور رأی نهایی */
 function rulingDM(c, opts = {}) {
-  const out = c.finalRuling.outcome === 'plaintiff' ? 'به نفع شاکی' : 'به نفع مشتکی‌عنه';
+  const out = c.finalRuling.outcome === 'plaintiff'
+    ? 'به نفع شاکی'
+    : c.finalRuling.outcome === 'defendant'
+      ? 'به نفع مشتکی‌عنه'
+      : 'مختومه — بدون نفع برای هیچ‌یک از طرفین';
   const role = opts.role === 'vakil'
     ? (c.plaintiffVakil && c.plaintiffVakil.name === opts.name ? 'شاکی' : 'مشتکی‌عنه')
     : 'شاکی';

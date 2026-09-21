@@ -152,6 +152,7 @@ function outcomeRow(caseNumber) {
       .addOptions(
         { label: 'پرونده به نفع شاکی ختم شد', value: 'plaintiff', emoji: '✅' },
         { label: 'پرونده به نفع مشتکی‌عنه ختم شد', value: 'defendant', emoji: '❌' },
+        { label: 'پرونده مختومه شد — بدون نفع برای هیچ‌یک از طرفین', value: 'dismissed', emoji: '⚖️' },
       ),
   );
 }
@@ -191,8 +192,9 @@ async function commitRuling(interaction, c, outcome, text) {
   // آمار برد/باخت هر دو وکیل بر اساس سمتِ وکالت
   const sides = [['plaintiff', c.plaintiffVakil], ['defendant', c.defendantVakil]];
   for (const [side, v] of sides) {
-    if (v) {
-      const won = (side === 'plaintiff' && outcome === 'plaintiff') || (side === 'defendant' && outcome === 'defendant');
+    if (v && outcome !== 'dismissed') {
+      // پروندهٔ مختومه نه برد است نه باخت — شمار پرونده‌های قبول‌شدهٔ وکیل هنگام پذیرش ثبت شده است
+      const won = side === 'plaintiff' ? outcome === 'plaintiff' : outcome === 'defendant';
       vakils.statInc(v.discordId, won ? 'wins' : 'losses');
     }
   }
@@ -304,7 +306,9 @@ module.exports = {
         });
 
       case 'outcome': {
-        c._pendingOutcome = interaction.values[0] === 'defendant' ? 'defendant' : 'plaintiff';
+        c._pendingOutcome = ['plaintiff', 'defendant', 'dismissed'].includes(interaction.values[0])
+          ? interaction.values[0]
+          : 'plaintiff';
         return interaction.showModal(rulingTextModal(c.number));
       }
 
