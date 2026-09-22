@@ -14,6 +14,7 @@ const commands = [];
 commands.push(require('./src/commands/shekayat').data.toJSON());
 for (const c of require('./src/commands/vakilAdmin')) commands.push(c.data.toJSON());
 commands.push(require('./src/commands/list').data.toJSON());
+commands.push(require('./src/commands/announce').data.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(cfg.token);
 

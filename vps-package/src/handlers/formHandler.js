@@ -61,7 +61,7 @@ function showPreview(interaction, draft) {
       { name: 'شماره تماس', value: d.plaintiff_phone, inline: true },
       { name: 'شغل / سمت', value: d.plaintiff_job || '—', inline: true },
       { name: 'وکیل / نمایندهٔ قانونی', value: draft.vakilName || 'انتخاب نشده', inline: true },
-      { name: '⚠️ مشتکی‌عنه', value: `${d.def_firstName} ${d.def_lastName}`, inline: true },
+      { name: '⚠️ متشاکی(شکایت‌شده)', value: `${d.def_firstName} ${d.def_lastName}`, inline: true },
       { name: '📌 موضوع شکایت', value: d.subject, inline: false },
       { name: '🕒 تاریخ و محل وقوع', value: `${d.occurredAt || '—'} — ${d.occurredPlace || '—'}`, inline: false },
       { name: '📝 شرح شکایت', value: clip(d.description), inline: false },

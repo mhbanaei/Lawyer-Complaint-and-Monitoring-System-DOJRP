@@ -68,8 +68,8 @@ function vakilStatusText(c) {
     parts.push('⏳ وکیل شاکی: در انتظار پذیرش وکالت');
   }
   parts.push(c.defendantVakil
-    ? `🛡️ وکیل مشتکی‌عنه: **${c.defendantVakil.name}**${phoneInline(c.defendantVakil.phone, c.defendantVakil.discordId)}`
-    : '🛡️ وکیل مشتکی‌عنه: در انتظار پذیرش وکالت');
+    ? `🛡️ وکیل متشاکی(شکایت‌شده): **${c.defendantVakil.name}**${phoneInline(c.defendantVakil.phone, c.defendantVakil.discordId)}`
+    : '🛡️ وکیل متشاکی(شکایت‌شده): در انتظار پذیرش وکالت');
   return parts.join('\n');
 }
 
@@ -85,7 +85,7 @@ function vakilRequestEmbed(c) {
     );
   e.addFields(
     { name: '👤 شاکی', value: `${c.plaintiff.firstName} ${c.plaintiff.lastName}`, inline: true },
-    { name: '⚠️ مشتکی‌عنه', value: sessions.defendantNames(c), inline: true },
+    { name: '⚠️ متشاکی(شکایت‌شده)', value: sessions.defendantNames(c), inline: true },
     { name: '📌 موضوع', value: clipField(c.subject, 1020), inline: false },
     { name: '🕒 تاریخ و محل وقوع', value: `${c.occurredAt} — ${c.occurredPlace}`, inline: false },
     { name: '🎯 خواستهٔ شاکی', value: clipField(c.demand, 1020), inline: false },
@@ -111,7 +111,7 @@ function caseEmbed(c, opts = {}) {
     { name: 'شغل / سمت', value: p.job, inline: true },
     { name: 'محل اقامت', value: p.residence, inline: false },
     { name: 'وکیل / نمایندهٔ قانونی', value: vakilStatusText(c), inline: false },
-    { name: '⚠️ مشتکی‌عنه', value: clipField(defendantBlock(c), 1020), inline: false },
+    { name: '⚠️ متشاکی(شکایت‌شده)', value: clipField(defendantBlock(c), 1020), inline: false },
     { name: '📌 موضوع شکایت / دادخواست', value: clipField(c.subject, 1020), inline: false },
     { name: '🕒 تاریخ وقوع موضوع', value: c.occurredAt, inline: true },
     { name: '📍 محل وقوع موضوع', value: c.occurredPlace, inline: true },
@@ -149,7 +149,7 @@ function finalRulingEmbed(c) {
   const p = c.plaintiff;
   e.addFields(
     { name: '👤 شاکی', value: `${p.firstName} ${p.lastName}`, inline: true },
-    { name: '⚠️ مشتکی‌عنه', value: sessions.defendantNames(c), inline: true },
+    { name: '⚠️ متشاکی(شکایت‌شده)', value: sessions.defendantNames(c), inline: true },
     { name: '📌 موضوع', value: c.subject, inline: false },
     { name: '📝 شرح شکایت', value: clipField(c.description), inline: false },
     { name: '🎯 خواستهٔ شاکی', value: clipField(c.demand), inline: false },
@@ -168,7 +168,9 @@ function finalRulingEmbed(c) {
 
   const outcome = c.finalRuling.outcome === 'plaintiff'
     ? '✅ پرونده به نفع شاکی ختم شد.'
-    : '❌ پرونده به نفع مشتکی‌عنه ختم شد.';
+    : c.finalRuling.outcome === 'defendant'
+      ? '❌ پرونده به نفع متشاکی(شکایت‌شده) ختم شد.'
+      : '⚖️ پرونده مختومه شد — بدون برد و باخت برای وکلای طرفین.';
   e.addFields(
     { name: '🔨 رأی نهایی قاضی', value: outcome, inline: false },
     { name: '📜 متن رأی', value: clipField(c.finalRuling.text), inline: false },
@@ -248,8 +250,8 @@ function vakilListEmbed(rows, { onlineMap }) {
         casesTxt = 'هنوز پرونده‌ای نپذیرفته است';
       } else {
         const parts = recs.slice(0, 8).map((r) => {
-          const res = r.outcome === null ? '' : (r.won ? ' 🏆' : ' 📉');
-          return `#${fa.digits(r.number)} (${r.side === 'plaintiff' ? 'شاکی' : 'مشتکی‌عنه'})${res}`;
+          const res = r.outcome === null ? '' : (r.outcome === 'dismissed' ? ' ⚖️' : (r.won ? ' 🏆' : ' 📉'));
+          return `#${fa.digits(r.number)} (${r.side === 'plaintiff' ? 'شاکی' : 'متشاکی(شکایت‌شده)'})${res}`;
         });
         const extra = recs.length > 8 ? ` … و ${fa.num(recs.length - 8)} مورد دیگر` : '';
         casesTxt = `🗣 ${fa.num(recs.length)} پرونده: ${parts.join('، ')}${extra}`;

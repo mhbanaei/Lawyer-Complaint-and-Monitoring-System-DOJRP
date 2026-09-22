@@ -78,7 +78,7 @@ t('متن اطلاعیهٔ جلسه', () => {
 
 t('پذیرش وکالت دو-طرفه', () => {
   assert.ok(cases.acceptSideVakil(c, { discordId: 'vakil-1', name: 'رضا محمدی', side: 'plaintiff' }));
-  // سمت شاکی پر است ولی سمت مشتکی‌عنه باز است
+  // سمت شاکی پر است ولی سمت متشاکی(شکایت‌شده) باز است
   assert.strictEqual(cases.acceptSideVakil(c, { discordId: 'vakil-2', name: 'دیگری', side: 'plaintiff' }), false);
   assert.ok(cases.acceptSideVakil(c, { discordId: 'vakil-2', name: 'سارا احمدی', side: 'defendant' }));
   assert.strictEqual(c.plaintiffVakil.discordId, 'vakil-1');
@@ -189,13 +189,38 @@ t('پس از رد شاکی، وکلای ردنشده در فهرست انتخا�
 
 t('مطالعه فقط برای وکیل پذیرنده (هر دو سمت)', () => {
   assert.ok(cases.isAcceptedVakil({ id: 'vakil-1' }, c)); // وکیل شاکی
-  assert.ok(cases.isAcceptedVakil({ id: 'vakil-2' }, c)); // وکیل مشتکی‌عنه
+  assert.ok(cases.isAcceptedVakil({ id: 'vakil-2' }, c)); // وکیل متشاکی(شکایت‌شده)
   assert.strictEqual(cases.isAcceptedVakil({ id: 'vakil-3' }, c), false);
+});
+
+// ---------- قانون: یک وکیل، یک سمت ----------
+t('وکیل سمت شاکی نمی‌تواند وکالت متشاکی(شکایت‌شده) را هم بپذیرد', () => {
+  const c2 = cases.create({ complainantId: 'user-side-test', form: { plaintiff_firstName: 'الف', plaintiff_lastName: 'ب', plaintiff_phone: '۰۹۱۱', def_firstName: 'ج', def_lastName: 'د', subject: 'تست یک‌سمت', description: 'تست' }, vakilPick: null });
+  // وکیل-۱ وکالت شاکی را می‌پذیرد
+  assert.ok(cases.acceptSideVakil(c2, { discordId: 'vakil-1', name: 'وکیل یک', side: 'plaintiff' }));
+  // حالا همان وکیل نمی‌تواند وکالت متشاکی(شکایت‌شده) را بگیرد
+  assert.strictEqual(cases.acceptSideVakil(c2, { discordId: 'vakil-1', name: 'وکیل یک', side: 'defendant' }), false);
+  assert.strictEqual(cases.isEngagedVakil(c2, 'vakil-1'), true);
+  // وکیل دیگر مشکلی ندارد
+  assert.ok(cases.acceptSideVakil(c2, { discordId: 'vakil-2', name: 'وکیل دو', side: 'defendant' }));
+});
+
+t('وکیل مشغول سمت دیگر نمی‌تواند درخواست وکالت شاکی بدهد', () => {
+  const c3 = cases.create({ complainantId: 'user-side-test-2', form: { plaintiff_firstName: 'الف', plaintiff_lastName: 'ب', plaintiff_phone: '۰۹۱۱', def_firstName: 'ج', def_lastName: 'د', subject: 'تست مسدودی', description: 'تست' }, vakilPick: null });
+  // وکیل-۲ وکالت متشاکی(شکایت‌شده) را دارد
+  assert.ok(cases.acceptSideVakil(c3, { discordId: 'vakil-2', name: 'وکیل دو', side: 'defendant' }));
+  // نمی‌تواند درخواست وکالت شاکی بدهد (هم از مسیر پذیرش عمومی)
+  assert.strictEqual(cases.setPendingVakilAwaitingConfirm(c3, { discordId: 'vakil-2', name: 'وکیل دو' }), null);
+  // (هم از مسیر انتخاب شاکی)
+  assert.strictEqual(cases.requestPlaintiffVakilByCitizen(c3, { discordId: 'vakil-2', name: 'وکیل دو', origin: 'citizen_pick' }), null);
+  // و از فهرست وکلای مجاز هم حذف است
+  const avail = cases.listAvailablePlaintiffVakils(c3, [{ discordId: 'vakil-2' }]);
+  assert.strictEqual(avail.length, 0);
 });
 
 // ---------- رأی نهایی ----------
 t('رأی نهایی به نفع شاکی و بستن پرونده', () => {
-  cases.closeWithRuling(c, { outcome: 'plaintiff', text: 'مشتکی‌عنه ملزم به استرداد است.', judgeId: 'judge-1' });
+  cases.closeWithRuling(c, { outcome: 'plaintiff', text: 'متشاکی(شکایت‌شده) ملزم به استرداد است.', judgeId: 'judge-1' });
   assert.strictEqual(c.status, 'closed');
   assert.ok(c.finalRuling.text.includes('استرداد'));
 });
@@ -279,11 +304,11 @@ t('کامپوننت‌های UI ساخته می‌شوند', () => {
   assert.strictEqual(vakilPanelRow().components.length, 3);
   assert.strictEqual(vakilPanelRow({ status: 'registered' }).components.length, 3);
   assert.strictEqual(vakilPanelRow({ status: 'scheduled' }).components.length, 3);
-  // پیشنهاد در جریان → دکمهٔ سمت شاکی «کلاً پنهان»؛ فقط مطالعه + دکمهٔ مشتکی‌عنه
+  // پیشنهاد در جریان → دکمهٔ سمت شاکی «کلاً پنهان»؛ فقط مطالعه + دکمهٔ متشاکی(شکایت‌شده)
   const pendingRow = vakilPanelRow({ status: 'registered', pendingVakil: { name: 'وکیل' } });
   assert.strictEqual(pendingRow.components.length, 2);
   assert.ok(!pendingRow.components[1].data.disabled);
-  // وکیل شاکی پذیرفته → دکمهٔ شاکی حذف، دکمهٔ مشتکی‌عنه فعال
+  // وکیل شاکی پذیرفته → دکمهٔ شاکی حذف، دکمهٔ متشاکی(شکایت‌شده) فعال
   assert.strictEqual(vakilPanelRow({ status: 'scheduled', plaintiffVakil: { name: 'a' } }).components.length, 2);
   // هر دو سمت پذیرفته → فقط مطالعه
   assert.strictEqual(vakilPanelRow({ status: 'scheduled', plaintiffVakil: { name: 'a' }, defendantVakil: { name: 'b' } }).components.length, 1);

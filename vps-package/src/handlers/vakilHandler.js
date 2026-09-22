@@ -4,7 +4,7 @@
  * پنل وکیل:
  * - پاسخ به پیشنهاد وکالت شاکی (در DM وکیلِ انتخابی): قبول / رد — مهلت ۱۲ ساعت (رد خودکار)
  * - پذیرش عمومی وکالت شاکی (پس از انقضای مهلت یا ردِ وکیلِ انتخابی)
- * - پذیرش وکالت مشتکی‌عنه (تا وقتی وکیل آن سمت پذیرفته مخفی می‌شود)
+ * - پذیرش وکالت متشاکی(شکایت‌شده) (تا وقتی وکیل آن سمت پذیرفته مخفی می‌شود)
  * - مطالعهٔ پرونده: فقط وکیل پذیرنده (یا قاضی/معاونت)
  */
 
@@ -88,15 +88,15 @@ function vakilStatsLine(discordId) {
 /** ارسال DM تأیید به شاکی و ذخیرهٔ شناسهٔ پیام */
 async function sendConfirmDm(client, c, pending) {
   const complainant = await client.users.fetch(c.complainantId).catch((e) => {
-    console.warn(`⚠️ کاربر شاکی (${c.complainantId}) برای DM تأیید وکیل یافت نشد:`, e.message);
+    console.warn(`⚠️ Karbare shaki (${c.complainantId}) baraye DM tasdighe vakil peyda nashod:`, e.message);
     return null;
   });
   if (!complainant) return;
   const dm = await complainant.send({
     content: sessionsSvc.vakilAcceptedDM(c, displayNameOf(pending.discordId, pending.name), vakilStatsLine(pending.discordId)),
     components: [confirmRow(c.number)],
-  }).then((m) => { console.log(`📨 DM تأیید وکیل (${pending.name}) با دکمه‌های قبول/رد به شاکی پروندهٔ ${c.number} ارسال شد.`); return m; })
-    .catch((e) => { console.warn('⚠️ DM تأیید وکیل به شاکی ارسال نشد (احتمالاً DM کاربر بسته است):', e.message); return null; });
+  }).then((m) => { console.log(`📨 DM tasdighe vakil (${pending.name}) ba dokme-haye ghabol/rad be shaki parvande-ye ${c.number} ersal shod.`); return m; })
+    .catch((e) => { console.warn('⚠️ DM tasdighe vakil be shaki ersal nashod (DM karbar baste ast):', e.message); return null; });
   if (dm) {
     if (c.pendingVakil) {
       c.pendingVakil.confirmDmMessageId = dm.id;
@@ -114,7 +114,7 @@ async function sendRepickDm(client, c, headLine) {
   await complainant.send({
     content: `${headLine || `🔄 وکیلِ پروندهٔ ${fa.digits(c.number)} تأیید نشد.`}\nاگر مایلید از فهرست زیر وکیل دیگری انتخاب کنید؛ پس از انتخاب، درخواست برای او ارسال می‌شود (و تأیید شما برای ثبتش لازم است).`,
     components: [repickRow(c.number, list)],
-  }).catch((e) => console.warn('⚠️ DM انتخاب مجدد وکیل ارسال نشد:', e.message));
+  }).catch((e) => console.warn('⚠️ DM entekhabe mojadad-e vakil ersal nashod:', e.message));
 }
 
 /** بستن دکمه‌های DM تأیید شاکی پس از پاسخ/انقضا */
@@ -141,13 +141,13 @@ async function doAcceptSide(interaction, c, side, rec) {
     return { name, pending: true };
   }
 
-  // سمت مشتکی‌عنه: مستقیم ثبت می‌شود (شماره تماس از رجیستری /addvakil)
+  // سمت متشاکی(شکایت‌شده): مستقیم ثبت می‌شود (شماره تماس از رجیستری /addvakil)
   const ok = cases.acceptSideVakil(c, { discordId: interaction.user.id, name, phone: rec ? rec.phone : null, side });
   if (!ok) return false;
   if (rec) vakils.statInc(rec.discordId, 'acceptedCases');
 
   const vakilUser = await interaction.client.users.fetch(interaction.user.id).catch(() => null);
-  if (vakilUser) await vakilUser.send(sessionsSvc.defendantVakilAcceptedDM(c, name)).catch((e) => console.warn('⚠️ DM پذیرش وکالت مشتکی‌عنه ارسال نشد:', e.message));
+  if (vakilUser) await vakilUser.send(sessionsSvc.defendantVakilAcceptedDM(c, name)).catch((e) => console.warn('⚠️ DM paziroozhe vekalate motshaki ersal nashod:', e.message));
 
   await require('./judgeHandler').refreshCaseMessage(interaction.client, c);
   return { name };
@@ -233,7 +233,7 @@ module.exports = {
 
         // DM به وکیل تأییدشده
         const vakilUser = await interaction.client.users.fetch(pending.discordId).catch(() => null);
-        if (vakilUser) await vakilUser.send(sessionsSvc.vakilConfirmedByPlaintiffDM(c, pending.name)).catch((e) => console.warn('⚠️ DM تأیید وکالت به وکیل ارسال نشد:', e.message));
+        if (vakilUser) await vakilUser.send(sessionsSvc.vakilConfirmedByPlaintiffDM(c, pending.name)).catch((e) => console.warn('⚠️ DM tasdighe vekalat be vakil ersal nashod:', e.message));
 
         await closeConfirmDm(interaction.client, c.complainantId, pending, '✅ وکیل تأیید شد.');
         await require('./judgeHandler').refreshCaseMessage(interaction.client, c);
@@ -248,7 +248,7 @@ module.exports = {
 
         // DM به وکیل ردشده
         const vakilUser = await interaction.client.users.fetch(pending.discordId).catch(() => null);
-        if (vakilUser) await vakilUser.send(sessionsSvc.vakilRejectedByPlaintiffDM(c, pending.name)).catch((e) => console.warn('⚠️ DM رد وکالت به وکیل ارسال نشد:', e.message));
+        if (vakilUser) await vakilUser.send(sessionsSvc.vakilRejectedByPlaintiffDM(c, pending.name)).catch((e) => console.warn('⚠️ DM rad-e vekalat be vakil ersal nashod:', e.message));
 
         await closeConfirmDm(interaction.client, c.complainantId, pending, '❌ این وکیل را نپذیرفتید.');
         await require('./judgeHandler').refreshCaseMessage(interaction.client, c);
@@ -263,37 +263,31 @@ module.exports = {
       return interaction.update({ content: '⛔ عملیات نامعتبر.', components: [] }).catch(() => {});
     }
 
-    // ---------- پنل وکیل روی پیام پرونده ----------
-    const msgId = interaction.message.id;
-    const customNum = Number(parts[3]) || Number(parts[4]);
-    const c = cases.caseByMessage(msgId)
-      || cases.all().find((x) => x.messageId === msgId)
-      || (Number.isFinite(customNum) && customNum > 0 ? cases.findByNumber(customNum) : null);
+    // ---------- پنل وکیل (کانال یا آینهٔ DM) ----------
+    // شناسهٔ دکمه: paradise:vakil:<read|accept>[:side]:<caseNumber>
+    const num = Number(parts[4]) || Number(parts[3]);
+    const c = Number.isFinite(num) && num > 0 ? cases.findByNumber(num) : null;
 
     if (!c) return interaction.reply({ content: '⛔ این پیام به پرونده‌ای متصل نیست.', flags: MessageFlags.Ephemeral });
 
     // ---------- منوی انتخاب مجدد وکیل (فقط شاکی، در DM) ----------
     if (action === 'repick') {
-      const c2 = cases.findByNumber(Number(parts[3]));
+      const c2 = c;
       if (!c2) return interaction.update({ content: '⛔ این پرونده دیگر معتبر نیست.', components: [] }).catch(() => {});
       if (c2.complainantId !== interaction.user.id) {
         return interaction.reply({ content: '⛔ فقط **شاکی** می‌تواند وکیل پرونده را انتخاب کند.', flags: MessageFlags.Ephemeral }).catch(() => {});
       }
       const picked = interaction.values[0];
       if (picked === 'none') return interaction.deferUpdate().catch(() => {});
-      if (!cases.requestPlaintiffVakilByCitizen(c2, (function () {
-        const v = vakils.findByDiscord(picked);
-        return v ? { discordId: v.discordId, name: `${v.firstName} ${v.lastName}`, origin: 'citizen_pick' } : null;
-      })() || {})) {
+      const v = vakils.findByDiscord(picked);
+      const pick = v ? { discordId: v.discordId, name: `${v.firstName} ${v.lastName}`, origin: 'citizen_pick' } : null;
+      if (!pick || !cases.requestPlaintiffVakilByCitizen(c2, pick)) {
         return interaction.update({ content: '⛔ این انتخاب ممکن نیست (وکیل مسدود است یا درخواست دیگری در جریان است).', components: [] }).catch(() => {});
       }
-      const v = vakils.findByDiscord(picked);
-      if (v && vakils.termActive(v)) {
-        const vu = await interaction.client.users.fetch(v.discordId).catch(() => null);
-        if (vu) {
-          const { publishDmForPending } = require('../services/casePublisher');
-          await publishDmForPending(interaction.client, c2);
-        }
+      const vu = await interaction.client.users.fetch(picked).catch(() => null);
+      if (vu) {
+        const { publishDmForPending } = require('../services/casePublisher');
+        await publishDmForPending(interaction.client, c2);
       }
       await require('./judgeHandler').refreshCaseMessage(interaction.client, c2);
       return interaction.update({
@@ -334,7 +328,7 @@ module.exports = {
         const taken = side === 'defendant' ? c.defendantVakil : c.plaintiffVakil;
         if (taken) {
           return interaction.reply({
-            content: `⛔ وکالت ${side === 'plaintiff' ? '**شاکی**' : '**مشتکی‌عنه**'} قبلاً توسط **${taken.name}** پذیرفته شده است.`,
+            content: `⛔ وکالت ${side === 'plaintiff' ? '**شاکی**' : '**متشاکی(شکایت‌شده)**'} قبلاً توسط **${taken.name}** پذیرفته شده است.`,
             flags: MessageFlags.Ephemeral,
           });
         }
@@ -356,6 +350,16 @@ module.exports = {
         if (c.complainantId === interaction.user.id) {
           return interaction.reply({ content: '⛔ شاکی نمی‌تواند وکیل خود باشد.', flags: MessageFlags.Ephemeral });
         }
+        // ⚖️ قانون: یک وکیل فقط وکالت «یک سمت» را می‌پذیرد — نه هر دو طرف
+        if (cases.isEngagedVakil(c, interaction.user.id)) {
+          const have = c.plaintiffVakil && c.plaintiffVakil.discordId === interaction.user.id
+            ? '**شاکی**'
+            : c.defendantVakil && c.defendantVakil.discordId === interaction.user.id ? '**متشاکی(شکایت‌شده)**' : '**شاکی** (در انتظار تأیید)';
+          return interaction.reply({
+            content: `⛔ شما در همین پرونده وکالت ${have} را دارید — یک وکیل نمی‌تواند وکالت هر دو طرف را بپذیرد.`,
+            flags: MessageFlags.Ephemeral,
+          });
+        }
 
         const res = await doAcceptSide(interaction, c, side, rec);
         if (!res) {
@@ -365,7 +369,7 @@ module.exports = {
         return interaction.reply({
           content: side === 'plaintiff'
             ? `✅ درخواست وکالت شما ثبت شد — **${res.name}**.\n⏳ اکنون **شاکی** باید شما را تأیید کند؛ پس از تأیید، وکیل رسمی پرونده می‌شوید.`
-            : `✅ وکالت **مشتکی‌عنه** توسط **${res.name}** پذیرفته شد.\n📌 توجه: ممکن است وکیل دیگری نیز به انتخاب مشتکی‌عنه اضافه شود؛ مسئولیت پرونده با شماست.`,
+            : `✅ وکالت **متشاکی(شکایت‌شده)** توسط **${res.name}** پذیرفته شد.\n📌 توجه: ممکن است وکیل دیگری نیز به انتخاب متشاکی(شکایت‌شده) اضافه شود؛ مسئولیت پرونده با شماست.`,
           flags: MessageFlags.Ephemeral,
         });
       }
@@ -382,7 +386,7 @@ module.exports = {
   async sweepPendingRequests(client) {
     const swept = cases.sweepExpiredPending();
     for (const { case: c, pending, kind } of swept) {
-      console.log(`⌛ پیشنهاد وکالت پروندهٔ ${c.number} (${pending.name}) منقضی شد — ${kind === 'confirm_expired' ? 'تأیید شاکی نیامد' : 'پاسخ وکیل نیامد'}.`);
+      console.log(`⌛ Pishnhade vekalat parvande-ye ${c.number} (${pending.name}) monaghez shod — ${kind === 'confirm_expired' ? 'tasdighe shaki nayamad' : 'pasokhe vakil nayamad'}.`);
       if (kind === 'confirm_expired') {
         // شاکی تأیید نکرد → وکیل از سمت شاکی مسدود و گزینه برای بقیه باز می‌شود
         await closeConfirmDm(client, c.complainantId, pending, '⌛ مهلت ۱۲ ساعته تأیید به پایان رسید — درخواست به‌صورت خودکار رد شد.');

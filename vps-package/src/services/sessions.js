@@ -27,7 +27,7 @@ function sessionAnnouncement(c) {
 
   // طرفین دعوا با منشن + وکلا با منشن و نام کامل
   const plaintiffLine = `👤 **شاکی:** <@${c.complainantId}> (${c.plaintiff.firstName} ${c.plaintiff.lastName})`;
-  const defendantLine = `⚠️ **مشتکی‌عنه:** ${defendantNames(c)}`;
+  const defendantLine = `⚠️ **متشاکی(شکایت‌شده):** ${defendantNames(c)}`;
   const vakilLines = [];
   const phoneOf = (id) => {
     try { const v = require('../services/vakils').findByDiscord(id); return v && v.phone ? ` — 📞 ${fa.digits(String(v.phone))}` : ''; } catch (_) { return ''; }
@@ -35,7 +35,7 @@ function sessionAnnouncement(c) {
   // اولویت شمارهٔ ثبت‌شده در پرونده، سپس رجیستری /addvakil
   const inline = (stored, id) => (stored ? ` — 📞 ${fa.digits(String(stored))}` : phoneOf(id));
   if (c.plaintiffVakil) vakilLines.push(`🧑‍⚖️ **وکیل شاکی:** <@${c.plaintiffVakil.discordId}> (${c.plaintiffVakil.name}${inline(c.plaintiffVakil.phone, c.plaintiffVakil.discordId)})`);
-  if (c.defendantVakil) vakilLines.push(`🛡️ **وکیل مشتکی‌عنه:** <@${c.defendantVakil.discordId}> (${c.defendantVakil.name}${inline(c.defendantVakil.phone, c.defendantVakil.discordId)})`);
+  if (c.defendantVakil) vakilLines.push(`🛡️ **وکیل متشاکی(شکایت‌شده):** <@${c.defendantVakil.discordId}> (${c.defendantVakil.name}${inline(c.defendantVakil.phone, c.defendantVakil.discordId)})`);
 
   const lines = [
     HEADER,
@@ -145,15 +145,15 @@ function vakilRejectedByPlaintiffDM(c, vakilName) {
 
 /** پیام خصوصی به وکیلِ پذیرفته‌شده: وقت دادگاه تعیین شد */
 
-/** پیام خصوصی به وکیلِ پذیرندهٔ سمت مشتکی‌عنه */
+/** پیام خصوصی به وکیلِ پذیرندهٔ سمت متشاکی(شکایت‌شده) */
 function defendantVakilAcceptedDM(c, vakilName) {
   return [
     '🛡️ **وکالت شما پذیرفته شد.**',
     '',
     `📋 شمارهٔ پرونده: **${fa.digits(c.number)}**`,
-    `⚠️ سمت شما: **وکیل مشتکی‌عنه**`,
+    `⚠️ سمت شما: **وکیل متشاکی(شکایت‌شده)**`,
     '',
-    '📌 در نظر داشته باشید: چون وکیل مشتکی‌عنه هستید، احتمال دارد وکیل دیگری نیز به انتخاب مشتکی‌عنه در پرونده اضافه شود؛',
+    '📌 در نظر داشته باشید: چون وکیل متشاکی(شکایت‌شده) هستید، احتمال دارد وکیل دیگری نیز به انتخاب متشاکی(شکایت‌شده) در پرونده اضافه شود؛',
     '**اما مسئولیت پرونده با شما خواهد بود.**',
     '',
     '🔔 متن کامل پرونده از دکمهٔ «مطالعهٔ پرونده» در کانال شکایات قابل مشاهده است.',
@@ -183,9 +183,13 @@ function sessionScheduledDM(c) {
 
 /** متن پیام خصوصی پس از صدور رأی نهایی */
 function rulingDM(c, opts = {}) {
-  const out = c.finalRuling.outcome === 'plaintiff' ? 'به نفع شاکی' : 'به نفع مشتکی‌عنه';
+  const out = c.finalRuling.outcome === 'plaintiff'
+    ? 'به نفع شاکی'
+    : c.finalRuling.outcome === 'defendant'
+      ? 'به نفع متشاکی(شکایت‌شده)'
+      : 'مختومه — بدون نفع برای هیچ‌یک از طرفین';
   const role = opts.role === 'vakil'
-    ? (c.plaintiffVakil && c.plaintiffVakil.name === opts.name ? 'شاکی' : 'مشتکی‌عنه')
+    ? (c.plaintiffVakil && c.plaintiffVakil.name === opts.name ? 'شاکی' : 'متشاکی(شکایت‌شده)')
     : 'شاکی';
   const head = opts.role === 'vakil'
     ? '⚖️ **رأی نهایی پرونده‌ای که وکالت آن را دارید صادر شد.**'
@@ -223,7 +227,7 @@ function caseCopyDM(c, opts = {}) {
 function vakilSessionDM(c, vakilName) {
   const s = c.session;
   const when = `${jalali.jalaliWeekday(new Date(s.at))} ${jalali.formatJalaliDateTime(new Date(s.at))}`;
-  const side = (c.plaintiffVakil && c.plaintiffVakil.discordId === vakilName) ? 'شاکی' : 'مشتکی‌عنه';
+  const side = (c.plaintiffVakil && c.plaintiffVakil.discordId === vakilName) ? 'شاکی' : 'متشاکی(شکایت‌شده)';
   const desc = String(c.description || '');
   const counterpart = side === 'شاکی'
     ? (c.defendantVakil ? `🛡️ وکیل طرف مقابل: **${c.defendantVakil.name}**${phoneOf(c.defendantVakil.discordId)}` : null)
@@ -234,7 +238,7 @@ function vakilSessionDM(c, vakilName) {
     `📋 **شمارهٔ پرونده:** ${fa.digits(c.number)}`,
     `🧑‍⚖️ سمت شما: **وکیل ${side}**`,
     `👤 شاکی: ${c.plaintiff.firstName} ${c.plaintiff.lastName}`,
-    `⚠️ مشتکی‌عنه: ${defendantNames(c)}`,
+    `⚠️ متشاکی(شکایت‌شده): ${defendantNames(c)}`,
     `📚 موضوع: ${c.subject}`,
     `📝 شرح: ${desc.slice(0, 300)}${desc.length > 300 ? '…' : ''}`,
     `🎯 خواستهٔ شاکی: ${String(c.demand || '—').slice(0, 200)}`,

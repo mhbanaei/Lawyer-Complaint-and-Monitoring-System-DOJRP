@@ -159,7 +159,7 @@ function startOnlinePolling(onTick) {
       }
       if (changed) { onlineTable.save(); vakils.save(); }
     } catch (e) {
-      console.error('⚠️ خطای پایش آنلاین:', e.message);
+      console.error('⚠️ Khataye payash online:', e.message);
     }
   }, interval);
   if (pollTimer.unref) pollTimer.unref();

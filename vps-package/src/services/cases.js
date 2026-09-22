@@ -60,7 +60,7 @@ function create({ complainantId, form, vakilPick }) {
     },
     // بخش وکیل شاکی (انتخاب از منو)
     vakil: vakilPick ? { discordId: vakilPick.discordId, name: vakilPick.name } : null,
-    // مشتکی‌عنهم: از فرم وب آرایهٔ چندنفره می‌آید؛ از فرم دیسکورد ۱ نفر
+    // متشاکی(شکایت‌شده): از فرم وب آرایهٔ چندنفره می‌آید؛ از فرم دیسکورد ۱ نفر
     defendants: (Array.isArray(form.defendants) && form.defendants.length
       ? form.defendants
       : [{
@@ -192,6 +192,7 @@ function acceptPendingByVakil(c) {
 function setPendingVakilAwaitingConfirm(c, { discordId, name, phone }) {
   if (c.plaintiffVakil || c.pendingVakil) return null;
   if ((c.rejectedVakils || []).includes(discordId)) return null;
+  if (isEngagedVakil(c, discordId)) return null; // وکیل مشغول سمت دیگر است
   const now = Date.now();
   c.pendingVakil = {
     status: 'awaiting_confirm',
@@ -237,9 +238,11 @@ function rejectPendingByPlaintiff(c, { block = true } = {}) {
   return p;
 }
 
-/** آیا این وکیل حق درخواست وکالت سمت شاکی را دارد؟ */
+/** آیا این وکیل حق درخواست وکالت سمت شاکی را دارد؟ (یک وکیل، یک سمت) */
 function canRequestPlaintiffVakil(c, discordId) {
-  return !c.plaintiffVakil && !c.pendingVakil && !(c.rejectedVakils || []).includes(discordId);
+  return !c.plaintiffVakil && !c.pendingVakil
+    && !(c.rejectedVakils || []).includes(discordId)
+    && !isEngagedVakil(c, discordId);
 }
 
 /**
@@ -249,6 +252,7 @@ function canRequestPlaintiffVakil(c, discordId) {
 function requestPlaintiffVakilByCitizen(c, { discordId, name, origin }) {
   if (c.plaintiffVakil || c.pendingVakil) return null;
   if ((c.rejectedVakils || []).includes(discordId)) return null;
+  if (isEngagedVakil(c, discordId)) return null; // وکیل مشغول سمت دیگر است
   return setPendingVakil(c, { discordId, name, origin });
 }
 
@@ -266,6 +270,19 @@ function listAvailablePlaintiffVakils(c, vakilList) {
 function setCopyMsgIds(c, role, msgId) {
   if (!c.copyMessages) c.copyMessages = {};
   c.copyMessages[role] = msgId;
+  table.save();
+}
+
+/** شناسهٔ پیام آینهٔ پرونده در DM وکیل — برای همگام‌سازی دکمه‌ها با کانال */
+function setVakilMirrorIds(c, discordId, msgId) {
+  if (!c.vakilMirror) c.vakilMirror = {};
+  c.vakilMirror[discordId] = msgId;
+  table.save();
+}
+
+/** شناسهٔ پیام آینهٔ پرونده در DM شاکی (نسخهٔ بدون دکمه — دکمه‌ها فقط برای قاضی و وکلا) */
+function setComplainantMirrorId(c, msgId) {
+  c.complainantMirror = msgId;
   table.save();
 }
 
@@ -300,11 +317,25 @@ function sweepExpiredPending() {
 }
 
 /**
- * پذیرش وکالت سمت مشتکی‌عنه (نخستین وکیل؛ نیازی به تأیید طرف مقابل ندارد)
+ * پذیرش وکالت سمت متشاکی(شکایت‌شده) (نخستین وکیل؛ نیازی به تأیید طرف مقابل ندارد)
  */
+/**
+ * آیا این وکیل از قبل در این پرونده درگیر است؟ (وکیل یکی از طرفین یا در انتظار تأیید سمت شاکی)
+ * یک وکیل در هر پرونده فقط مجاز به داشتن وکالت «یک سمت» است — نه هر دو طرف
+ */
+function isEngagedVakil(c, discordId) {
+  if (!discordId) return false;
+  return Boolean(
+    (c.plaintiffVakil && c.plaintiffVakil.discordId === discordId)
+    || (c.defendantVakil && c.defendantVakil.discordId === discordId)
+    || (c.pendingVakil && c.pendingVakil.discordId === discordId),
+  );
+}
+
 function acceptSideVakil(c, { discordId, name, phone, side }) {
   const key = side === 'defendant' ? 'defendantVakil' : 'plaintiffVakil';
   if (c[key]) return false;
+  if (isEngagedVakil(c, discordId)) return false; // یک وکیل، یک سمت — نه هر دو طرف
   c[key] = { discordId, name, phone: phone || null, acceptedAt: Date.now() };
   c.vakilRequests.push({ discordId, name, outcome: `accepted:${side}`, at: Date.now() });
   table.save();
@@ -381,6 +412,9 @@ module.exports = {
   setSession,
   setAnnouncementMsg,
   setCopyMsgIds,
+  setVakilMirrorIds,
+  setComplainantMirrorId,
+  isEngagedVakil,
   closeWithRuling,
   indexMessage,
   caseByMessage,

@@ -8,7 +8,7 @@ const ssl = require('./src/ssl');
 
 // 🔐 SSL خودکار: در صورت تنظیم SSL_DOMAIN، گواهی Let's Encrypt در استارت گرفته/تمدید می‌شود
 // (قبل از بارگذاری config و وب‌سرور تا HTTPS با گواهی تازه بالا بیاید)
-ssl.setup().catch((e) => console.error('⚠️ خطای SSL:', e.message));
+ssl.setup().catch((e) => console.error('[SSL] Khata:', e.message));
 
 const cfg = require('./src/config');
 const fa = require('./src/fa');
@@ -16,7 +16,7 @@ const fa = require('./src/fa');
 // ⏱ درج ساعت در همهٔ لاگ‌ها برای پیگیری زنده در کنسول
 const _log = console.log.bind(console);
 const _err = console.error.bind(console);
-const _now = () => new Date().toLocaleTimeString('fa-IR');
+const _now = () => new Date().toLocaleTimeString('en-GB', { hour12: false }); // ASCII — baraye namayesh-e dorost dar CMD/VPS
 console.log = (...a) => _log(`[${_now()}]`, ...a);
 console.error = (...a) => _err(`[${_now()}]`, ...a);
 
@@ -24,8 +24,8 @@ console.error = (...a) => _err(`[${_now()}]`, ...a);
 const net = require('net');
 const instanceLock = net.createServer();
 instanceLock.on('error', () => {
-  console.error('⛔ ربات قبلاً در یک پنجرهٔ دیگر در حال اجراست!');
-  console.error('   این پنجره را ببندید، یا ابتدا پنجرهٔ قبلی ربات را خاموش کنید.');
+  console.error('⛔ Bot ghablan dar yek panjareye digar dar hale ejrast!');
+  console.error('   In panjare ra bebandid, ya avval panjareye ghabli ra khamoosh konid.');
   process.exit(2);
 });
 instanceLock.listen(49160, '127.0.0.1');
@@ -44,6 +44,7 @@ const commands = new Map();
 commands.set('shekayat', require('./src/commands/shekayat'));
 for (const c of require('./src/commands/vakilAdmin')) commands.set(c.data.name, c);
 commands.set('list', require('./src/commands/list'));
+commands.set('announce', require('./src/commands/announce'));
 
 const players = require('./src/services/players');
 
@@ -52,7 +53,7 @@ const judgeHandler = require('./src/handlers/judgeHandler');
 const vakilHandler = require('./src/handlers/vakilHandler');
 
 client.once(Events.ClientReady, (c) => {
-  console.log(`✅ ربات آنلاین شد: ${c.user.tag}`);
+  console.log(`✅ Bot online shod: ${c.user.tag}`);
   vakilsSweep();
   players.startOnlinePolling();
   setInterval(vakilsSweep, 60 * 60 * 1000).unref();
@@ -61,7 +62,7 @@ client.once(Events.ClientReady, (c) => {
   try {
     require('./src/webserver').start(client);
   } catch (e) {
-    console.error('⚠️ وب‌سرور فرم اجرا نشد:', e.message);
+    console.error('⚠️ Webserver form ejra nashod:', e.message);
   }
 
   // ⌛ رد خودکار پیشنهادهای وکالت ۱۲ ساعتهٔ منقضی‌شده (هر ۵ دقیقه)
@@ -75,7 +76,7 @@ client.once(Events.ClientReady, (c) => {
   const bootTime = Date.now();
   setInterval(() => {
     const mins = Math.floor((Date.now() - bootTime) / 60000);
-    console.log(`🟢 ربات در حال اجراست — ${fa.digits(mins)} دقیقه بدون قطعی`);
+    console.log(`🟢 Bot dar hale ejrast — ${mins} daghighe bedoone ghati`);
   }, 5 * 60 * 1000).unref();
 });
 
@@ -102,6 +103,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return await judgeHandler.onModal(interaction);
     }
 
+    // مودال اطلاعیه به وکلا (/announce)
+    if (interaction.isModalSubmit() && interaction.customId === 'paradise:announce:modal') {
+      return await require('./src/commands/announce').onModal(interaction);
+    }
+
     // دکمه‌ها و منوها
     if (interaction.isButton() || interaction.isStringSelectMenu()) {
       const [ns] = interaction.customId.split(':');
@@ -116,13 +122,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
       if (interaction.customId.startsWith('paradise:vakil:')) {
         return await vakilHandler.onComponent(interaction);
       }
+      if (interaction.customId.startsWith('paradise:announce:')) {
+        return await require('./src/commands/announce').onComponent(interaction);
+      }
     }
 
     if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
       await interaction.reply({ content: '⛔ اینتراکشن نامعتبر است.', flags: MessageFlags.Ephemeral }).catch(() => {});
     }
   } catch (e) {
-    console.error('❌ خطا در پردازش اینتراکشن:', e);
+    console.error('❌ Khata dar pardazesh interaction:', e);
     const payload = { content: '⚠️ خطایی رخ داد. دوباره تلاش کنید.', flags: MessageFlags.Ephemeral };
     if (interaction.isRepliable() && !interaction.replied) {
       await interaction.reply(payload).catch(() => {});
@@ -134,7 +143,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 // ذخیرهٔ امن داده‌ها هنگام خاموشی
 function shutdown(signal) {
-  console.log(`\n⏳ خاموشی (${signal})...`);
+  console.log(`\n⏳ Khamooshi (${signal})...`);
   try {
     players.flushOnExit();
     require('./src/services/cases').flush();
@@ -151,12 +160,12 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 if (require.main === module) {
   // 🏛️ بنر فارسی — چاپ مستقیم (خروجی UTF-8 در کنسول درست نمایش داده می‌شود)
   _log('============================================================');
-  _log('   🏛️  ربات شکایات و دادگاه — ParadiseRP');
-  _log('   * این پنجره را باز نگه دارید؛ تا باز است ربات آنلاین است.');
-  _log('   * خاموش کردن: Ctrl+C و سپس Y (یا بستن همین پنجره)');
+  _log('   🏛️  Bot-e Shekayat va Dadgah — ParadiseRP');
+  _log('   * In panjare ra baz negah darid; ta baz ast, bot online ast.');
+  _log('   * Khamoosh kardan: Ctrl+C va bad Y (ya bastan-e hamin panjare)');
   _log('============================================================');
   client.login(cfg.token).catch((e) => {
-    console.error('❌ ورود ناموفق:', e.message);
+    console.error('❌ Vorood namovafagh:', e.message);
     // ۳ = توکن نامعتبر (بدون ری‌استارت خودکار) | ۱ = خطای موقت (ری‌استارت خودکار)
     process.exit(e && e.code === 'TokenInvalid' ? 3 : 1);
   });

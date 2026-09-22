@@ -2,7 +2,7 @@
 
 /**
  * کامند /shekayat — شروع ثبت شکایت (برای همهٔ اعضای سرور)
- * فرم رسمی به‌صورت صفحهٔ وب ارائه می‌شود (فرم کامل با مشتکی‌عنهم ۱ تا ۱۰ نفر،
+ * فرم رسمی به‌صورت صفحهٔ وب ارائه می‌شود (فرم کامل با متشاکی(شکایت‌شده) ۱ تا ۱۰ نفر،
  * چاپ فرم و …). لینک صفحه با توکن امضاشدهٔ اختصاصیِ همین کاربر ساخته می‌شود.
  *
  * مودال‌های مرحله‌ای دیسکورد هنوز پشتیبانی می‌شوند (STAGES / modalForStage
@@ -28,20 +28,20 @@ const STAGES = {
     ],
   },
   B: {
-    title: 'اقامت و مشتکی‌عنه (۲ از ۵)',
+    title: 'اقامت و متشاکی(شکایت‌شده) (۲ از ۵)',
     fields: [
       { id: 'plaintiff_job', label: 'شغل / سمت', required: false, max: 100 },
       { id: 'plaintiff_residence', label: 'محل اقامت (شهر، استان، آدرس، کدپستی)', required: false, max: 300 },
-      { id: 'def_firstName', label: 'مشتکی‌عنه: نام *', required: true, max: 100 },
-      { id: 'def_lastName', label: 'مشتکی‌عنه: نام خانوادگی *', required: true, max: 100 },
-      { id: 'def_fatherName', label: 'مشتکی‌عنه: نام پدر', required: false, max: 100 },
+      { id: 'def_firstName', label: 'متشاکی(شکایت‌شده): نام *', required: true, max: 100 },
+      { id: 'def_lastName', label: 'متشاکی(شکایت‌شده): نام خانوادگی *', required: true, max: 100 },
+      { id: 'def_fatherName', label: 'متشاکی(شکایت‌شده): نام پدر', required: false, max: 100 },
     ],
   },
   C: {
-    title: 'مشتکی‌عنه و موضوع (۳ از ۵)',
+    title: 'متشاکی(شکایت‌شده) و موضوع (۳ از ۵)',
     fields: [
-      { id: 'def_phone', label: 'مشتکی‌عنه: شماره تماس', required: false, max: 20 },
-      { id: 'def_job', label: 'مشتکی‌عنه: شغل / سمت', required: false, max: 100 },
+      { id: 'def_phone', label: 'متشاکی(شکایت‌شده): شماره تماس', required: false, max: 20 },
+      { id: 'def_job', label: 'متشاکی(شکایت‌شده): شغل / سمت', required: false, max: 100 },
       { id: 'def_relation', label: 'نوع ارتباط با شاکی', required: false, max: 100 },
       { id: 'def_place', label: 'محل اقامت / محل فعالیت', required: false, max: 300 },
       { id: 'subject', label: 'موضوع شکایت / دادخواست *', required: true, max: 200 },
@@ -102,7 +102,7 @@ module.exports = {
       .setColor(0x5865f2)
       .setTitle('بسمه‌تعالی — فرم ثبت شکایت / دادخواست')
       .setDescription('**به منظور پیگیری امور قضایی و حقوقی**\n\n'
-        + 'برای تکمیل فرم رسمی (اطلاعات شاکی، مشتکی‌عنهم ۱ تا ۱۰ نفر، موضوع و خواسته) دکمهٔ زیر را بزنید.\n'
+        + 'برای تکمیل فرم رسمی (اطلاعات شاکی، متشاکی(شکایت‌شده) ۱ تا ۱۰ نفر، موضوع و خواسته) دکمهٔ زیر را بزنید.\n'
         + 'شمارهٔ ثبت و تاریخ ثبت به‌صورت خودکار درج می‌شود.\n\n'
         + '📋 پس از ثبت، پرونده در کانال شکایات منتشر شده و شمارهٔ ثبت به شما اعلام می‌شود.');
 

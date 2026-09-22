@@ -39,10 +39,12 @@ function judgePanelRow(caseNumber, caseRec = null) {
  * دکمه‌های وکیل زیر پیام پرونده
  * - پذیرش وکالت شاکی: تا وقتی وکیل شاکی پذیرفته/در انتظار پاسخ است غیرفعال یا مخفی؛
    پس از انقضای ۱۲ ساعته یا ردِ وکیلِ انتخابی، برای سایر وکلا باز می‌شود.
- * - پذیرش وکالت مشتکی‌عنه: تا وقتی وکیل مشتکی‌عنه پذیرفته مخفی می‌شود.
+ * - پذیرش وکالت متشاکی(شکایت‌شده): تا وقتی وکیل متشاکی(شکایت‌شده) پذیرفته مخفی می‌شود.
  */
 function vakilPanelRow(caseRec = null) {
-  const comps = [btn('paradise:vakil:read', '📂 مطالعهٔ پرونده', ButtonStyle.Secondary)];
+  // شمارهٔ پرونده در شناسهٔ دکمه‌ها → دکمه‌ها هم در کانال و هم در «آینهٔ DM» وکلا کار می‌کنند
+  const n = caseRec ? `:${caseRec.number}` : '';
+  const comps = [btn(`paradise:vakil:read${n}`, '📂 مطالعهٔ پرونده', ButtonStyle.Secondary)];
   const closed = caseRec && caseRec.status === 'closed';
   if (!closed) {
     const pTaken = caseRec && caseRec.plaintiffVakil;
@@ -50,11 +52,11 @@ function vakilPanelRow(caseRec = null) {
     if (pTaken || pending) {
       // وکیل شاکی پذیرفته یا درخواستی در جریان است → دکمهٔ سمت شاکی کلاً پنهان می‌شود
     } else {
-      comps.push(btn('paradise:vakil:accept:plaintiff', '🧑‍⚖️ پذیرش وکالت شاکی', ButtonStyle.Success));
+      comps.push(btn(`paradise:vakil:accept:plaintiff${n}`, '🧑‍⚖️ پذیرش وکالت شاکی', ButtonStyle.Success));
     }
     const dTaken = caseRec && caseRec.defendantVakil;
     if (!dTaken) {
-      comps.push(btn('paradise:vakil:accept:defendant', '🛡️ پذیرش وکالت مشتکی‌عنه', ButtonStyle.Success));
+      comps.push(btn(`paradise:vakil:accept:defendant${n}`, '🛡️ پذیرش وکالت متشاکی(شکایت‌شده)', ButtonStyle.Success));
     }
   }
   return new ActionRowBuilder().addComponents(comps);

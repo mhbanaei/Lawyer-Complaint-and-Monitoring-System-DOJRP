@@ -67,8 +67,8 @@ try {
     };
     cfg.sslEnabled = false;
   } else {
-    console.error('❌ خطای پیکربندی:', e.message);
-    console.error('   فایل .env.example را به .env کپی و مقادیر را تکمیل کنید.');
+    console.error('❌ Khataye peykbandi:', e.message);
+    console.error('   File .env.example ra be .env copy konid va maghadir ra takmil konid.');
     process.exitCode = 1;
     throw e;
   }

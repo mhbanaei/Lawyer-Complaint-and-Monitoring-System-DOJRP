@@ -129,8 +129,8 @@ async function handleSubmit(req, res, client) {
   }
   const count = Math.max(1, Math.min(10, Number(data.defendant_count) || 1));
   for (let i = 1; i <= count; i += 1) {
-    if (!String(data[`defendant_${i}_first_name`] || '').trim()) missing.push(`نام مشتکی‌عنه ${fa.num(i)}`);
-    if (!String(data[`defendant_${i}_last_name`] || '').trim()) missing.push(`نام خانوادگی مشتکی‌عنه ${fa.num(i)}`);
+    if (!String(data[`defendant_${i}_first_name`] || '').trim()) missing.push(`نام متشاکی(شکایت‌شده) ${fa.num(i)}`);
+    if (!String(data[`defendant_${i}_last_name`] || '').trim()) missing.push(`نام خانوادگی متشاکی(شکایت‌شده) ${fa.num(i)}`);
   }
   if (missing.length) {
     return sendJson(res, 400, { ok: false, message: `تکمیل این موارد الزامی است: ${missing.join('، ')}` });
@@ -217,7 +217,7 @@ function makeHandler(client) {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       return res.end('Not Found');
     } catch (e) {
-      console.error('⚠️ خطای وب‌سرور:', e);
+      console.error('⚠️ Khataye webserver:', e);
       return sendJson(res, 500, { ok: false, message: 'خطای داخلی سرور' });
     }
   };
@@ -227,15 +227,15 @@ function makeHandler(client) {
 function listen(server, port, label) {
   return new Promise((resolve) => {
     server.once('error', (e) => {
-      console.error(`⚠️ ${label} روی پورت ${port} اجرا نشد: ${e.message}`);
+      console.error(`⚠️ ${label} roye port ${port} ejra nashod: ${e.message}`);
       if (e.code === 'EACCES' || e.code === 'EADDRINUSE') {
-        console.error(`   پورت ${port} اشغال است یا دسترسی ندارد — در .env مقدار WEB_PORT را تغییر دهید`);
-        console.error('   (مثلاً WEB_PORT=4287) و آن پورت را در فایروال/VPS باز کنید.');
+        console.error(`   Port ${port} eshghal ast ya dastresi nadarad — dar .env meghdare WEB_PORT ra taghir dahid`);
+        console.error('   (Masalan WEB_PORT=4287) va an port ra dar firewall/VPS baz konid.');
       }
       resolve(false);
     });
     server.listen(port, '0.0.0.0', () => {
-      console.log(`🌐 ${label} فعال شد (پورت ${port})`);
+      console.log(`🌐 ${label} faal shod (port ${port})`);
       resolve(true);
     });
   });
@@ -248,7 +248,7 @@ async function start(client) {
   // ⚠️ ترتیب حیاتی: HTTP باید «فوراً» بالا بیاید تا challengeهای Let's Encrypt
   // (که روی همین پورت ۸۰ می‌آیند) پاسخ بگیرند — وگرنه گواهی هیچ‌وقت صادر نمی‌شود!
   const httpServer = http.createServer(handler);
-  listen(httpServer, cfg.webPort, '🌐 HTTP فرم شکایت');
+  listen(httpServer, cfg.webPort, 'HTTP form-e shekayat');
 
   // سپس (حتی دقایقی بعد) به‌محض آماده‌شدن گواهی، HTTPS را همان‌جا روشن کن
   require('./ssl').ready().then(() => {
@@ -258,10 +258,10 @@ async function start(client) {
     try {
       const opts = { cert: fs.readFileSync(c), key: fs.readFileSync(k) };
       const httpsServer = https.createServer(opts, handler);
-      listen(httpsServer, cfg.sslPort, '🔒 HTTPS فرم شکایت');
-      console.log(`↪️ از این لحظه HTTP به HTTPS ریدایرکت می‌شود — آدرس اصلی: https://<دامنه>${cfg.sslPort === 443 ? '' : ':' + cfg.sslPort}/Shekayat`);
+      listen(httpsServer, cfg.sslPort, 'HTTPS form-e shekayat');
+      console.log(`↪️ Az in lahze HTTP be HTTPS redirect mishavad — adrese asli: https://<domain>${cfg.sslPort === 443 ? '' : ':' + cfg.sslPort}/Shekayat`);
     } catch (e) {
-      console.error('⚠️ خواندن گواهی SSL ناموفق بود:', e.message, '— فعلاً فقط HTTP فعال می‌ماند.');
+      console.error('⚠️ Khandan-e goavahi SSL namovafagh bood:', e.message, "— fe'lan faghat HTTP faal mimanad.");
     }
   }).catch(() => { /* noop */ });
 }

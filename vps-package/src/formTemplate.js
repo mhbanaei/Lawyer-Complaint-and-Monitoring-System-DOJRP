@@ -2,7 +2,7 @@
 
 /**
  * قالب صفحهٔ وب «فرم ثبت شکایت / دادخواست»
- * - دقیقاً بر اساس طرح رسمی فرم (بسمه‌تعالی، بخش‌بندی، مشتکی‌عنهم ۱ تا ۱۰ نفر)
+ * - دقیقاً بر اساس طرح رسمی فرم (بسمه‌تعالی، بخش‌بندی، متشاکی(شکایت‌شده) ۱ تا ۱۰ نفر)
  * - شمارهٔ ثبت و تاریخ ثبت به‌صورت خودکار از ربات پر می‌شود
  * - انتخاب وکیل از منو (نام + تعداد پرونده‌های قبول‌شده)
  * - ارسال به ربات از طریق POST /submit — پرونده مستقیم در کانال شکایات منتشر می‌شود
@@ -56,11 +56,11 @@ button{border:0;border-radius:6px;padding:11px 28px;font-family:inherit;font-siz
 </div></div></section>
 
 <section class="section">
-<h2>اطلاعات مشتکی‌عنهم</h2>
+<h2>اطلاعات متشاکی(شکایت‌شده)</h2>
 <div class="section-body">
 <div class="grid">
 <div class="full">
-<label>تعداد مشتکی‌عنهم <span class="required">*</span></label>
+<label>تعداد متشاکی(شکایت‌شده) <span class="required">*</span></label>
 <select id="defendantCount" name="defendant_count" required>
 <option value="1" selected>۱ نفر</option>
 <option value="2">۲ نفر</option><option value="3">۳ نفر</option>
@@ -111,7 +111,7 @@ function makeDefendant(index){
  wrap.className = 'defendant-card';
  wrap.innerHTML = \`
    <div style="font-weight:bold;background:#eef3f7;padding:10px;border-radius:5px;margin:12px 0">
-     مشتکی‌عنه شماره \${n}
+     متشاکی(شکایت‌شده) شماره \${n}
    </div>
    <div class="grid">
      <div><label>نام <span class="required">*</span></label><input name="defendant_\${n}_first_name" required></div>

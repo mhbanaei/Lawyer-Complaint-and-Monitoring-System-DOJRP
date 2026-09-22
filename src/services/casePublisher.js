@@ -34,7 +34,7 @@ async function publishDmForPending(client, c) {
   if (!pending || pending.status !== 'pending') return false;
   const vu = await client.users.fetch(pending.discordId).catch(() => null);
   if (!vu) {
-    console.warn(`⚠️ وکیل ${pending.discordId} در دیسکورد یافت نشد — درخواست باطل می‌شود.`);
+    console.warn(`⚠️ Vakil ${pending.discordId} dar Discord peyda nashod — darkhast batel mishavad.`);
     cases.respondPending(c, 'expired');
     return false;
   }
@@ -45,7 +45,7 @@ async function publishDmForPending(client, c) {
     content: `🧑‍⚖️ **درخواست وکالت جدید برای شما ثبت شد** — پروندهٔ ${fa.digits(c.number)}`,
     embeds: [embeds.vakilRequestEmbed(c, originTxt)],
     components: [respondRow(c.number)],
-  }).catch((e) => { console.warn(`⚠️ DM پیشنهاد وکالت به وکیل ${pending.discordId} ارسال نشد:`, e.message); return null; });
+  }).catch((e) => { console.warn(`⚠️ DM pishnhade vekalat be vakil ${pending.discordId} ersal nashod:`, e.message); return null; });
   if (dmMsg) cases.setPendingDmMessage(c, dmMsg.id);
   return Boolean(dmMsg);
 }
@@ -71,6 +71,10 @@ async function publishCase(client, { complainantId, form, vakilId }) {
   rec.messageId = msg.id;
   cases.save();
 
+  // آینهٔ DM پرونده برای همهٔ وکلای فعال — همان پیام و همان دکمه‌ها، همگام با کانال
+  await require('./mirror').mirrorToVakils(client, rec)
+    .catch((e) => console.warn('⚠️ Ersale ayene-ye DM vakilha namovafagh:', e.message));
+
   // پیشنهاد وکالت شاکی به وکیلِ انتخابی (DM + مهلت ۱۲ ساعته)
   if (vakilId && vakilId !== 'novakil') {
     const v = vakils.findByDiscord(vakilId);
@@ -83,7 +87,7 @@ async function publishCase(client, { complainantId, form, vakilId }) {
   const user = await client.users.fetch(complainantId).catch(() => null);
   if (user) {
     await user.send(sessionsSvc.complaintReceivedDM(rec))
-      .catch((e) => console.warn(`⚠️ DM ثبت شکایت به ${complainantId} ارسال نشد:`, e.message));
+      .catch((e) => console.warn(`⚠️ DM sabte shekayat be ${complainantId} ersal nashod:`, e.message));
   }
 
   return rec;

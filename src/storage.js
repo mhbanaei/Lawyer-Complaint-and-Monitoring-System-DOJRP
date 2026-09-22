@@ -35,7 +35,7 @@ class JsonTable {
         return JSON.parse(raw);
       }
     } catch (e) {
-      console.error(`⚠️ خطا در خواندن ${this.file}: ${e.message} — با مقدار پیش‌فرض ادامه می‌دهیم.`);
+      console.error(`⚠️ Khataye khandan ${this.file}: ${e.message} — ba meghdare pishfarz edame midahim.`);
       // نسخهٔ پشتیبان از دادهٔ خراب نگه می‌داریم
       try { fs.copyFileSync(this.file, `${this.file}.corrupt-${Date.now()}`); } catch (_) { /* noop */ }
     }
@@ -61,7 +61,7 @@ class JsonTable {
       this._timer = null;
       if (!this._dirty) return;
       try { this.flush(); } catch (e) {
-        console.error(`⚠️ خطا در ذخیرهٔ ${this.file}: ${e.message}`);
+        console.error(`⚠️ Khataye zakhire ${this.file}: ${e.message}`);
       }
     }, 400);
     if (this._timer.unref) this._timer.unref();

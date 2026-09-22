@@ -80,13 +80,13 @@ async function ensureCertificate(domain) {
   if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
     const remain = daysRemaining(fs.readFileSync(certPath));
     if (remain === null || remain > 30) {
-      log(`گواهی موجود استفاده می‌شود (${remain === null ? 'غیرقابل‌خواندن ولی موجود' : `${remain} روز باقی‌مانده`}).`);
+      log(`Goavahi-e mojood estefade mishavad (${remain === null ? 'mavjood vali gheyr-e ghabel-e khandan' : `${remain} rooz baghi-mande`}).`);
       return { cert: certPath, key: keyPath };
     }
-    log(`گواهی ${remain} روز به انقضا مانده — تمدید می‌کنم...`);
+    log(`Goavahi ${remain} rooz be engeza mande — tamdid mikonam...`);
   }
 
-  log(`در حال دریافت گواهی Let's Encrypt برای ${domain} (تا ۲ دقیقه ممکن است طول بکشد)...`);
+  log(`Dar hale daryaft-e goavahi Let's Encrypt baraye ${domain} (ta 2 daghighe momken ast tool bekeshad)...`);
 
   // کلید حساب ACME — یک بار ساخته و همیشه همان استفاده می‌شود
   const accountKey = fs.existsSync(accountKeyPath)
@@ -113,7 +113,7 @@ async function ensureCertificate(domain) {
     challengeCreateFn: async (authz, challenge, keyAuthorization) => {
       pendingChallenges.set(challenge.token, keyAuthorization);
       // پاسخ از طریق وب‌سرور اصلی (پورت ۸۰) داده می‌شود — سرور جداگانه‌ای لازم نیست
-      log(`challenge آماده است — Let's Encrypt آن را از http://${domain}/.well-known/acme-challenge/ بررسی می‌کند...`);
+      log(`Challenge amade ast — Let's Encrypt an ra az http://${domain}/.well-known/acme-challenge/ barresi mikonad...`);
     },
     challengeRemoveFn: async (authz, challenge) => {
       pendingChallenges.delete(challenge.token);
@@ -122,7 +122,7 @@ async function ensureCertificate(domain) {
 
   fs.writeFileSync(certPath, certificate);
   fs.writeFileSync(keyPath, certKey);
-  log(`✅ گواهی ${domain} صادر و در پوشهٔ ssl/ ذخیره شد.`);
+  log(`✅ Goavahi ${domain} sader va dar pooshe-ye ssl/ zakhire shod.`);
   return { cert: certPath, key: keyPath };
 }
 
@@ -146,12 +146,12 @@ function setup() {
           process.env.SSL_KEY_PATH = paths.key;
           return paths;
         } catch (e) {
-          console.error('[SSL] ❌ دریافت گواهی ناموفق بود:', e.message);
+          console.error('[SSL] ❌ Daryaft-e goavahi namovafagh bood:', e.message);
           if (attempt === 1) {
-            console.error('[SSL]    چک‌لیست: ۱) فایروال ویندوز — start.bat خودش بازش می‌کند ۲) فایروال پنل دیتاسنتر — پورت ۸۰ و ۴۴۳ باز باشد ۳) ArvanCloud روی DNS only (خاکستری) باشد');
-            console.error(`[SSL]    ⏳ هر ۱۰ دقیقه خودکار دوباره تلاش می‌کنم — به‌محض در دسترس بودن پورت ۸۰ از اینترنت، گواهی صادر و HTTPS بدون ری‌استارت روشن می‌شود.`);
+            console.error('[SSL]    Checklist: 1) Firewall Windows — start.bat khodesh mishanad 2) Firewall-e panel-e datacenter — port 80 va 443 baz bashad 3) ArvanCloud roye DNS only (khakestari) bashad');
+            console.error('[SSL]    Har 10 daghighe khodkar dobare talash mikonam — be mahze dastres boodan-e port 80 az internet, goavahi sader va HTTPS bedoone restart roshan mishavad.');
           } else {
-            console.error(`[SSL]    (تلاش شمارهٔ ${attempt}) — ۱۰ دقیقه دیگر دوباره...`);
+            console.error(`[SSL]    (Talash-e shomare-ye ${attempt}) — 10 daghighe digar dobare...`);
           }
           await new Promise((r) => setTimeout(r, RETRY_MS));
         }

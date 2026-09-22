@@ -92,8 +92,8 @@ async function commitSession(interaction, c, type, dayOffset, hour) {
     if (!v) continue;
     const vu = await interaction.client.users.fetch(v.discordId).catch(() => null);
     if (vu) {
-      await vu.send(sessionsSvc.vakilSessionDM(c, v.name)).catch((e) => console.warn(`⚠️ DM جلسه به وکیل ${v.discordId} ارسال نشد:`, e.message));
-      const sent = await vu.send({ content: copy.content, embeds: [copy.embed] }).catch((e) => { console.warn(`⚠️ رونوشت پرونده به وکیل ${v.discordId} ارسال نشد:`, e.message); return null; });
+      await vu.send(sessionsSvc.vakilSessionDM(c, v.name)).catch((e) => console.warn(`⚠️ DM jalase be vakil ${v.discordId} ersal nashod:`, e.message));
+      const sent = await vu.send({ content: copy.content, embeds: [copy.embed] }).catch((e) => { console.warn(`⚠️ Roonevesht parvande be vakil ${v.discordId} ersal nashod:`, e.message); return null; });
       if (sent) cases.setCopyMsgIds(c, role, sent.id);
     }
   }
@@ -102,12 +102,12 @@ async function commitSession(interaction, c, type, dayOffset, hour) {
   const complainant = await interaction.client.users.fetch(c.complainantId).catch(() => null);
   if (complainant) {
     await complainant.send(sessionsSvc.sessionScheduledDM(c))
-      .catch((e) => console.warn(`⚠️ DM تعیین وقت به شاکی ارسال نشد (${c.complainantId}):`, e.message));
+      .catch((e) => console.warn(`⚠️ DM taein-e vaght be shaki ersal nashod (${c.complainantId}):`, e.message));
     const sent = await complainant.send({ content: copy.content, embeds: [copy.embed] })
-      .catch((e) => { console.warn(`⚠️ رونوشت پرونده به شاکی ارسال نشد (${c.complainantId}):`, e.message); return null; });
+      .catch((e) => { console.warn(`⚠️ Roonevesht parvande be shaki ersal nashod (${c.complainantId}):`, e.message); return null; });
     if (sent) cases.setCopyMsgIds(c, 'complainant', sent.id);
   } else {
-    console.warn(`⚠️ شاکی پروندهٔ ${c.number} در دیسکورد یافت نشد:`, c.complainantId);
+    console.warn(`⚠️ Shakie parvande-ye ${c.number} dar Discord peyda nashod:`, c.complainantId);
   }
 
   // به‌روزرسانی پیام پرونده در کانال شکایات
@@ -127,20 +127,26 @@ async function refreshCaseMessage(client, c) {
   if (!ch) return null;
   const msg = await ch.messages.fetch(c.messageId).catch(() => null);
   if (!msg) return null;  if (c.status === 'closed') {
-    return msg.edit({
+    const out = await msg.edit({
       content: `بسمه‌تعالی\n⚖️ **رأی نهایی پروندهٔ شمارهٔ ${fa.digits(c.number)}**`,
       embeds: [embeds.finalRulingEmbed(c)],
       components: [],
     });
+    // آینهٔ DM وکلا هم به شکل رأی نهایی ویرایش می‌شود (دکمه‌ها حذف)
+    await require('../services/mirror').mirrorToVakils(client, c).catch((e) => console.warn('⚠️ Hamsaz-sazi ayene-ye DM vakilha namovafagh:', e.message));
+    return out;
   }
   const sessionLine = c.session
     ? `\n🏛️ وقت دادگاه: **${c.session.atText}** — ${c.session.type === 'private' ? '🔒 جلسهٔ خصوصی' : '📢 جلسهٔ عمومی'}`
     : '';
-  return msg.edit({
+  const out = await msg.edit({
     content: `📋 **پروندهٔ شکایت — شمارهٔ ثبت: ${fa.digits(c.number)}**${sessionLine}`,
     embeds: [embeds.caseEmbed(c)],
     components: [require('../ui').judgePanelRow(c.number, c), require('../ui').vakilPanelRow(c)],
   });
+  // آینهٔ DM وکلا — همان محتوا و همان دکمه‌ها، همگام با کانال
+  await require('../services/mirror').mirrorToVakils(client, c).catch((e) => console.warn('⚠️ Hamsaz-sazi ayene-ye DM vakilha namovafagh:', e.message));
+  return out;
 }
 
 // ---------- رأی نهایی ----------
@@ -151,7 +157,8 @@ function outcomeRow(caseNumber) {
       .setPlaceholder('نتیجهٔ پرونده را انتخاب کنید')
       .addOptions(
         { label: 'پرونده به نفع شاکی ختم شد', value: 'plaintiff', emoji: '✅' },
-        { label: 'پرونده به نفع مشتکی‌عنه ختم شد', value: 'defendant', emoji: '❌' },
+        { label: 'پرونده به نفع متشاکی(شکایت‌شده) ختم شد', value: 'defendant', emoji: '❌' },
+        { label: 'پرونده مختومه شد — بدون نفع برای هیچ‌یک از طرفین', value: 'dismissed', emoji: '⚖️' },
       ),
   );
 }
@@ -174,14 +181,14 @@ async function editCopyMessage(client, c, role, user, copy) {
       const msg = await dm.messages.fetch(msgId).catch(() => null);
       if (msg) {
         await msg.edit({ content: copy.content, embeds: [copy.embed] })
-          .catch((e) => console.warn(`⚠️ ویرایش رونوشت رأی (${role}) ناموفق:`, e.message));
+          .catch((e) => console.warn(`⚠️ Virayesh roonevesht-e ray (${role}) namovafagh:`, e.message));
         return;
       }
     }
   }
   // پیام اصلی پیدا نشد → رونوشت تازه می‌فرستیم
   await user.send({ content: copy.content, embeds: [copy.embed] })
-    .catch((e) => console.warn(`⚠️ ارسال رونوشت رأی (${role}) ناموفق:`, e.message));
+    .catch((e) => console.warn(`⚠️ Ersal roonevesht-e ray (${role}) namovafagh:`, e.message));
 }
 
 /** بستن پرونده با رأی و به‌روزرسانی آمار وکلا */
@@ -191,8 +198,9 @@ async function commitRuling(interaction, c, outcome, text) {
   // آمار برد/باخت هر دو وکیل بر اساس سمتِ وکالت
   const sides = [['plaintiff', c.plaintiffVakil], ['defendant', c.defendantVakil]];
   for (const [side, v] of sides) {
-    if (v) {
-      const won = (side === 'plaintiff' && outcome === 'plaintiff') || (side === 'defendant' && outcome === 'defendant');
+    if (v && outcome !== 'dismissed') {
+      // پروندهٔ مختومه نه برد است نه باخت — شمار پرونده‌های قبول‌شدهٔ وکیل هنگام پذیرش ثبت شده است
+      const won = side === 'plaintiff' ? outcome === 'plaintiff' : outcome === 'defendant';
       vakils.statInc(v.discordId, won ? 'wins' : 'losses');
     }
   }
@@ -211,7 +219,7 @@ async function commitRuling(interaction, c, outcome, text) {
           content: `بسمه‌تعالی\n⚖️ **رأی نهایی پروندهٔ شمارهٔ ${fa.digits(c.number)}**`,
           embeds: [embeds.finalRulingEmbed(c)],
           components: [],
-        }).catch((e) => console.warn('⚠️ ویرایش اعلامیهٔ جلسه به شکل رأی ناموفق:', e.message));
+        }).catch((e) => console.warn('⚠️ Virayesh elamiye-ye jalase be soorate ray namovafagh:', e.message));
       }
     }
   }
@@ -304,7 +312,9 @@ module.exports = {
         });
 
       case 'outcome': {
-        c._pendingOutcome = interaction.values[0] === 'defendant' ? 'defendant' : 'plaintiff';
+        c._pendingOutcome = ['plaintiff', 'defendant', 'dismissed'].includes(interaction.values[0])
+          ? interaction.values[0]
+          : 'plaintiff';
         return interaction.showModal(rulingTextModal(c.number));
       }
 
