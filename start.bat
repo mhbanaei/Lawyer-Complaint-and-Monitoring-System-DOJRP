@@ -13,12 +13,23 @@ mode con: cols=100 lines=40
 cd /d "%~dp0"
 
 rem ---- Auto-elevate to Administrator (needed for ports 80/443 and Node.js install) ----
+rem If elevation is denied/canceled we CONTINUE anyway (bot runs; only low ports may fail)
 net session >nul 2>&1
 if errorlevel 1 (
     echo [INFO] Requesting Administrator rights...
     echo        ^(needed for HTTPS ports 80/443 and automatic Node.js install^)
-    powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
-    exit /b 0
+    powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs" >nul 2>&1
+    if errorlevel 1 (
+        echo [WARN] Administrator rights were NOT granted ^(UAC canceled^).
+        echo        Continuing anyway - the bot will run, but ports 80/443
+        echo        and automatic Node.js install may fail without admin.
+        echo.
+        ping -n 4 127.0.0.1 >nul
+    ) else (
+        echo [OK] Elevated window opened. This window can be closed.
+        ping -n 3 127.0.0.1 >nul
+        exit /b 0
+    )
 )
 
 :boot
@@ -132,24 +143,31 @@ echo [OK] Dependencies installed.
 echo.
 
 :depsready
-rem ---- Step 3: Register slash commands (first run only; delete .deployed to re-register) ----
-if exist .deployed goto cmdready
+rem ---- Step 3: Register slash commands (every run — always fresh commands) ----
 echo [SETUP] Registering slash commands...
 node deploy-commands.js
 if errorlevel 1 (
     echo [ERROR] Command registration failed! Check BOT_TOKEN and CLIENT_ID in .env
-    pause
-    exit /b 1
+    echo        Bot will start anyway; commands may be outdated.
+    echo.
 )
-type nul > .deployed
 echo [OK] Commands registered.
 echo.
 
 :cmdready
+rem ---- Sanity: node must exist right before running (prevents 9009 restart-loop) ----
+where node >nul 2>nul
+if errorlevel 1 (
+    echo [ERROR] Node.js not found in PATH right before start!
+    echo         Close this window and run start.bat again.
+    pause
+    exit /b 1
+)
 echo [%time%] Starting bot... live logs below:
 echo      (first run with SSL_DOMAIN may take up to a minute for the certificate)
 echo ------------------------------------------------------------
 title ParadiseRP Complaint Bot [RUNNING]
+set CRASHES=0
 
 :run
 node index.js
@@ -176,8 +194,17 @@ if "%RC%"=="3" (
     pause
     exit /b 3
 )
+rem ---- Guard against infinite crash-restart loop: stop after 3 consecutive crashes ----
+set /a CRASHES+=1
+if %CRASHES% GEQ 3 (
+    echo.
+    echo [ERROR] Bot crashed %CRASHES% times in a row! Auto-restart stopped.
+    echo         Read the last error above, fix it, then run start.bat again.
+    pause
+    exit /b 1
+)
 echo.
-echo [%time%] [WARN] Bot stopped! Restarting in 5 seconds...
+echo [%time%] [WARN] Bot stopped! (crash %CRASHES%/3) Restarting in 5 seconds...
 echo        Close this window to shut it down completely.
 title ParadiseRP Complaint Bot [OFFLINE - restarting...]
 ping -n 6 127.0.0.1 >nul
