@@ -19,7 +19,7 @@ if exist vps-package rmdir /s /q vps-package
 mkdir vps-package
 
 rem ---- Source files ----
-for %%F in (index.js deploy-commands.js package.json package-lock.json start.bat .env .env.example README.md) do (
+for %%F in (index.js deploy-commands.js package.json package-lock.json start.bat stop.bat watchdog.bat run-bot.bat run-watchdog-hidden.vbs watchdog-register.ps1 .env .env.example README.md) do (
     if exist "%%F" copy /y "%%F" vps-package\ >nul
 )
 

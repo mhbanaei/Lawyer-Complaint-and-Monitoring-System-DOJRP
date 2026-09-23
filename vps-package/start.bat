@@ -41,9 +41,9 @@ echo ============================================================
 echo.
 
 rem ---- Open firewall for HTTP/HTTPS inbound (idempotent) ----
-rem HTTP(80) is required for the Let's Encrypt challenge; WEB_SSL_PORT (default 4289) serves the form.
+rem HTTP(80) is required for the Let's Encrypt challenge; WEB_SSL_PORT (default 443) serves the form.
 for /f "tokens=1,2 delims==" %%a in ('findstr /b "WEB_SSL_PORT=" .env 2^>nul') do set SSLPORT=%%b
-if not defined SSLPORT set SSLPORT=4289
+if not defined SSLPORT set SSLPORT=443
 set SSLPORT=%SSLPORT: =%
 echo [SETUP] Ensuring firewall rules for ports 80 and %SSLPORT%...
 netsh advfirewall firewall delete rule name="ParadiseBot HTTP" >nul 2>&1
@@ -143,7 +143,7 @@ echo [OK] Dependencies installed.
 echo.
 
 :depsready
-rem ---- Step 3: Register slash commands (every run — always fresh commands) ----
+rem ---- Step 3: Register slash commands (every run - always fresh commands) ----
 echo [SETUP] Registering slash commands...
 node deploy-commands.js
 if errorlevel 1 (
@@ -155,6 +155,20 @@ echo [OK] Commands registered.
 echo.
 
 :cmdready
+rem ---- Step 4: Watchdog - scheduled task (auto-revive when bot goes offline) ----
+echo [SETUP] Registering watchdog task (auto-restart when bot goes offline)...
+schtasks /Delete /TN "ParadiseBotWatchdog" /F >nul 2>&1
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0watchdog-register.ps1"
+if errorlevel 1 (
+    echo [WARN] Watchdog task could not be registered - auto-revive after
+    echo        reboot will not work. Restart-in-window still works.
+) else (
+    schtasks /Change /TN "ParadiseBotWatchdog" /ENABLE >nul 2>&1
+    echo [OK] Watchdog active - checks every 1 minute, revives the bot
+    echo      automatically if it goes offline, even after VPS reboot.
+)
+echo.
+
 rem ---- Sanity: node must exist right before running (prevents 9009 restart-loop) ----
 where node >nul 2>nul
 if errorlevel 1 (

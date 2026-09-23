@@ -155,6 +155,10 @@ function shutdown(signal) {
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 
+// 🛡️ هر خطای پردازش‌نشده فقط لاگ می‌شود — ربات هرگز بیرون نمی‌پرد تا Watchdog ناچار به ری‌استارتش نشود
+process.on('uncaughtException', (e) => console.error('❌ UncaughtException:', e && e.stack || e));
+process.on('unhandledRejection', (e) => console.error('❌ UnhandledRejection:', e && (e.stack || e.message) || e));
+
 // کد ۱۳۰ = توقف توسط کاربر (Ctrl+C) — تا start.bat لوپ نزند
 
 if (require.main === module) {
@@ -169,6 +173,25 @@ if (require.main === module) {
     // ۳ = توکن نامعتبر (بدون ری‌استارت خودکار) | ۱ = خطای موقت (ری‌استارت خودکار)
     process.exit(e && e.code === 'TokenInvalid' ? 3 : 1);
   });
+
+  // 🩺 Watchdog شمارهٔ ۲: اگر اتصال Discord قطع شد، ۹۰ ثانیه بعد به‌طور کامل خارج شو
+  //   (start.bat و Watchdog زمان‌بندی‌شده دوباره بالا می‌آورند)
+  let discordDownSince = 0;
+  client.on(Events.ShardDisconnect, () => {
+    if (!discordDownSince) {
+      discordDownSince = Date.now();
+      console.error('[WARN] Discord disconnected! Agar 90 sanie bargardad, khareej mishavam (khod-bazsazi)');
+    }
+  });
+  client.on(Events.ShardReconnecting, () => { discordDownSince = 0; });
+  client.on(Events.ShardResume, () => { discordDownSince = 0; });
+  setInterval(() => {
+    if (discordDownSince && Date.now() - discordDownSince > 90 * 1000) {
+      console.error('[ERROR] Discord 90 sanie ghat bood! Baraye bazsazi-ye kamel khareej mishavam...');
+      try { client.destroy(); } catch (_) { /* noop */ }
+      process.exit(1); // 1 = restart khodkar ( Watchdog va start.bat )
+    }
+  }, 15 * 1000).unref();
 }
 
 module.exports = { client };
