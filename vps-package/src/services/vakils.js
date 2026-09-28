@@ -140,7 +140,7 @@ function acceptedCasesOf(discordId) {
       status: c.status,
       side: (c.plaintiffVakil && c.plaintiffVakil.discordId === discordId) ? 'plaintiff' : 'defendant',
       outcome: c.finalRuling ? c.finalRuling.outcome : null,
-      // مختومه (dismissed) نه برد است نه باخت → won فقط برای رأی به نفع یکی از طرفین
+ // مختومه (dismissed) نه برد است نه باخت won فقط برای رأی به نفع یکی از طرفین
       won: c.finalRuling && c.finalRuling.outcome !== 'dismissed'
         ? (c.finalRuling.outcome === 'plaintiff') === (c.plaintiffVakil && c.plaintiffVakil.discordId === discordId)
         : false,

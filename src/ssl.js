@@ -36,7 +36,7 @@ function sslActive() {
 }
 
 /* ---------- پاسخ challenge — از طریق وب‌سرور اصلی (پورت ۸۰) سرو می‌شود ---------- */
-const pendingChallenges = new Map(); // token → keyAuthorization
+const pendingChallenges = new Map(); // token keyAuthorization
 
 /**
  * سروِ درخواست‌های ACME HTTP-01 — از داخل هندلر وب‌سرور صدا زده می‌شود
@@ -122,7 +122,7 @@ async function ensureCertificate(domain) {
 
   fs.writeFileSync(certPath, certificate);
   fs.writeFileSync(keyPath, certKey);
-  log(`✅ Goavahi ${domain} sader va dar pooshe-ye ssl/ zakhire shod.`);
+ log(` Goavahi ${domain} sader va dar pooshe-ye ssl/ zakhire shod.`);
   return { cert: certPath, key: keyPath };
 }
 
@@ -146,7 +146,7 @@ function setup() {
           process.env.SSL_KEY_PATH = paths.key;
           return paths;
         } catch (e) {
-          console.error('[SSL] ❌ Daryaft-e goavahi namovafagh bood:', e.message);
+          console.error('[SSL] [ERROR] Daryaft-e goavahi namovafagh bood:', e.message);
           if (attempt === 1) {
             console.error('[SSL]    Checklist: 1) Firewall Windows — start.bat khodesh mishanad 2) Firewall-e panel-e datacenter — port 80 va 443 baz bashad 3) ArvanCloud roye DNS only (khakestari) bashad');
             console.error('[SSL]    Har 10 daghighe khodkar dobare talash mikonam — be mahze dastres boodan-e port 80 az internet, goavahi sader va HTTPS bedoone restart roshan mishavad.');

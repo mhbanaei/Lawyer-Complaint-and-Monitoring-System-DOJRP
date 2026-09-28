@@ -12,43 +12,43 @@ const embeds = require('../embeds');
 const fa = require('../fa');
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('list')
-    .setDescription('فهرست وکلا با جزئیات (فقط خودتان می‌بینید)')
-    .setDMPermission(false),
+ data: new SlashCommandBuilder()
+ .setName('list')
+ .setDescription('فهرست وکلا با جزئیات (فقط خودتان می‌بینید)')
+ .setDMPermission(false),
 
-  async execute(interaction) {
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+ async execute(interaction) {
+ await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-    vakils.sweepExpired();
-    const rows = vakils.leaderboard();
+ vakils.sweepExpired();
+ const rows = vakils.leaderboard();
 
-    // وضعیت آنلاین فعلی: تطبیق هر وکیل با فهرست بازیکنان (id + نام درون‌بازی ذخیره‌شده + لایسنس‌ها)
-    const onlineMap = {};
-    let playerList = null;
-    try {
-      playerList = await players.getPlayers(true);
-    } catch (_) { playerList = null; }
+ // وضعیت آنلاین فعلی: تطبیق هر وکیل با فهرست بازیکنان (id + نام درون‌بازی ذخیره‌شده + لایسنس‌ها)
+ const onlineMap = {};
+ let playerList = null;
+ try {
+ playerList = await players.getPlayers(true);
+ } catch (_) { playerList = null; }
 
-    const enriched = rows.map((v) => {
-      const copy = { ...v };
-      copy._onlineSeconds = players.currentOnlineSeconds(v);
-      onlineMap[v.discordId] = playerList
-        ? players.matchesPlayer(v, playerList)
-        : players.isCurrentlyOnline(v); // خطای شبکه → وضعیت پایش داخلی
-      return copy;
-    });
+ const enriched = rows.map((v) => {
+ const copy = { ...v };
+ copy._onlineSeconds = players.currentOnlineSeconds(v);
+ onlineMap[v.discordId] = playerList
+ ? players.matchesPlayer(v, playerList)
+: players.isCurrentlyOnline(v); // خطای شبکه وضعیت پایش داخلی
+ return copy;
+ });
 
-    const embed = embeds.vakilListEmbed(enriched, { onlineMap });
+ const embed = embeds.vakilListEmbed(enriched, { onlineMap });
 
-    // ردیف دوم: آمار پرونده‌ها
-    const s = require('../services/cases').stats();
-    embed.addFields({
-      name: '📊 آمار پرونده‌ها',
-      value: `کل: **${fa.num(s.total)}** — باز: **${fa.num(s.open)}** — بسته: **${fa.num(s.closed)}**`,
-      inline: false,
-    });
+ // ردیف دوم: آمار پرونده‌ها
+ const s = require('../services/cases').stats();
+ embed.addFields({
+ name: 'آمار پرونده‌ها',
+ value: `کل: **${fa.num(s.total)}** — باز: **${fa.num(s.open)}** — بسته: **${fa.num(s.closed)}**`,
+ inline: false,
+ });
 
-    return interaction.editReply({ embeds: [embed] });
-  },
+ return interaction.editReply({ embeds: [embed] });
+ },
 };

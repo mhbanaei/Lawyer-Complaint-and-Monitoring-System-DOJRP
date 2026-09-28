@@ -110,18 +110,18 @@ function makeDefendant(index){
  const wrap = document.createElement('div');
  wrap.className = 'defendant-card';
  wrap.innerHTML = \`
-   <div style="font-weight:bold;background:#eef3f7;padding:10px;border-radius:5px;margin:12px 0">
-     متشاکی(شکایت‌شده) شماره \${n}
-   </div>
-   <div class="grid">
-     <div><label>نام <span class="required">*</span></label><input name="defendant_\${n}_first_name" required></div>
-     <div><label>نام خانوادگی <span class="required">*</span></label><input name="defendant_\${n}_last_name" required></div>
-     <div><label>نام پدر</label><input name="defendant_\${n}_father"></div>
-     <div><label>شماره تماس</label><input name="defendant_\${n}_phone"></div>
-     <div><label>شغل / سمت</label><input name="defendant_\${n}_job"></div>
-     <div><label>نوع ارتباط با شاکی</label><input name="defendant_\${n}_relationship"></div>
-     <div class="full"><label>محل اقامت / محل فعالیت</label><input name="defendant_\${n}_address"></div>
-   </div>\`;
+ <div style="font-weight:bold;background:#eef3f7;padding:10px;border-radius:5px;margin:12px 0">
+ متشاکی(شکایت‌شده) شماره \${n}
+ </div>
+ <div class="grid">
+ <div><label>نام <span class="required">*</span></label><input name="defendant_\${n}_first_name" required></div>
+ <div><label>نام خانوادگی <span class="required">*</span></label><input name="defendant_\${n}_last_name" required></div>
+ <div><label>نام پدر</label><input name="defendant_\${n}_father"></div>
+ <div><label>شماره تماس</label><input name="defendant_\${n}_phone"></div>
+ <div><label>شغل / سمت</label><input name="defendant_\${n}_job"></div>
+ <div><label>نوع ارتباط با شاکی</label><input name="defendant_\${n}_relationship"></div>
+ <div class="full"><label>محل اقامت / محل فعالیت</label><input name="defendant_\${n}_address"></div>
+ </div>\`;
  return wrap;
 }
 
@@ -135,27 +135,27 @@ renderDefendants();
 
 // دریافت شمارهٔ ثبت، تاریخ ثبت و فهرست وکلا از ربات
 (async () => {
-  const msg = document.getElementById('msg');
-  try {
-    const r = await fetch('/api/meta?u=' + encodeURIComponent(UID) + '&t=' + encodeURIComponent(TOKEN));
-    const j = await r.json();
-    if (!j.ok) { msg.textContent = j.message || 'دسترسی نامعتبر — فرم را از داخل دیسکورد با /shekayat باز کنید.'; return; }
-    document.getElementById('registrationNo').value = j.registrationNo;
-    document.getElementById('registrationDate').value = j.registrationDate;
-    const sel = document.getElementById('lawyerSelect');
-    sel.innerHTML = '';
-    const none = document.createElement('option');
-    none.value = 'novakil'; none.textContent = 'بدون وکیل'; // گزینهٔ اول
-    sel.appendChild(none);
-    for (const v of j.vakils) {
-      const o = document.createElement('option');
-      o.value = v.value; o.textContent = v.label;
-      sel.appendChild(o);
-    }
-    if (j.openCase) msg.textContent = '⚠️ شما یک پروندهٔ باز دارید؛ تا بسته‌شدن آن امکان ثبت جدید نیست.';
-  } catch (e) {
-    msg.textContent = 'خطا در ارتباط با سرور ربات';
-  }
+ const msg = document.getElementById('msg');
+ try {
+ const r = await fetch('/api/meta?u=' + encodeURIComponent(UID) + '&t=' + encodeURIComponent(TOKEN));
+ const j = await r.json();
+ if (!j.ok) { msg.textContent = j.message || 'دسترسی نامعتبر — فرم را از داخل دیسکورد با /shekayat باز کنید.'; return; }
+ document.getElementById('registrationNo').value = j.registrationNo;
+ document.getElementById('registrationDate').value = j.registrationDate;
+ const sel = document.getElementById('lawyerSelect');
+ sel.innerHTML = '';
+ const none = document.createElement('option');
+ none.value = 'novakil'; none.textContent = 'بدون وکیل'; // گزینهٔ اول
+ sel.appendChild(none);
+ for (const v of j.vakils) {
+ const o = document.createElement('option');
+ o.value = v.value; o.textContent = v.label;
+ sel.appendChild(o);
+ }
+ if (j.openCase) msg.textContent = 'شما یک پروندهٔ باز دارید؛ تا بسته‌شدن آن امکان ثبت جدید نیست.';
+ } catch (e) {
+ msg.textContent = 'خطا در ارتباط با سرور ربات';
+ }
 })();
 
 form.addEventListener('submit', async function(e){
@@ -165,22 +165,22 @@ form.addEventListener('submit', async function(e){
  const btn = this.querySelector('button.primary');
  btn.disabled = true;
  try{
-   const r = await fetch('/submit',{
-     method:'POST',
-     headers:{'Content-Type':'application/json'},
-     body:JSON.stringify(data)
-   });
-   const j = await r.json();
-   document.getElementById('msg').textContent = j.message;
-   if(j.ok){
-     form.reset();
-     renderDefendants();
-     location.reload();
-   }
+ const r = await fetch('/submit',{
+ method:'POST',
+ headers:{'Content-Type':'application/json'},
+ body:JSON.stringify(data)
+ });
+ const j = await r.json();
+ document.getElementById('msg').textContent = j.message;
+ if(j.ok){
+ form.reset();
+ renderDefendants();
+ location.reload();
+ }
  }catch(e){
-   document.getElementById('msg').textContent='خطا در ارتباط با سرور';
+ document.getElementById('msg').textContent='خطا در ارتباط با سرور';
  }finally{
-   btn.disabled = false;
+ btn.disabled = false;
  }
 });
 </script>

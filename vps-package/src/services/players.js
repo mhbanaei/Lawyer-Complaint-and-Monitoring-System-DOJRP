@@ -80,7 +80,7 @@ function sameName(a, b) {
 
 /**
  * آیا این بازیکن همان وکیل است؟
- * ترتیب تطبیق: gameId جلسهٔ فعلی → نام درون‌بازی ذخیره‌شده در /addvakil → شناسه‌های لایسنس.
+ * ترتیب تطبیق: gameId جلسهٔ فعلی نام درون‌بازی ذخیره‌شده در /addvakil شناسه‌های لایسنس.
  * نکته: id بازیکن بعد از هر DC و برگشتن تغییر می‌کند؛ به همین دلیل تطبیق نام اصلی‌ترین روش است.
  */
 function playerMatchesVakil(player, vakil) {
@@ -159,7 +159,7 @@ function startOnlinePolling(onTick) {
       }
       if (changed) { onlineTable.save(); vakils.save(); }
     } catch (e) {
-      console.error('⚠️ Khataye payash online:', e.message);
+      console.error('[WARN] Khataye payash online:', e.message);
     }
   }, interval);
   if (pollTimer.unref) pollTimer.unref();

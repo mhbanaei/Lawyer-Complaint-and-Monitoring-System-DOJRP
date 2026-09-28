@@ -67,7 +67,7 @@ try {
     };
     cfg.sslEnabled = false;
   } else {
-    console.error('❌ Khataye peykbandi:', e.message);
+    console.error('[ERROR] Khataye peykbandi:', e.message);
     console.error('   File .env.example ra be .env copy konid va maghadir ra takmil konid.');
     process.exitCode = 1;
     throw e;

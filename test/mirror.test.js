@@ -100,6 +100,8 @@ async function main() {
       client,
       reply: async (x) => x,
       update: async (x) => x,
+      deferUpdate: async () => {},
+      editReply: async (x) => x,
     };
     await vakilHandler.onComponent(interaction);
     assert.ok(c.pendingVakil);
@@ -117,6 +119,8 @@ async function main() {
       client,
       reply: async (x) => x,
       update: async (x) => x,
+      deferUpdate: async () => {},
+      editReply: async (x) => x,
     };
     await vakilHandler.onComponent(interaction);
     assert.ok(c.plaintiffVakil && c.plaintiffVakil.discordId === 'vak1');

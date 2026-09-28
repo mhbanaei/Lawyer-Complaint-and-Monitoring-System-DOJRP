@@ -2,7 +2,7 @@
 
 /**
  * سرویس پرونده‌های شکایت
- * چرخهٔ عمر: ثبت → تعیین وقت دادگاه → پذیرش وکالت‌ها → رأی نهایی → بسته‌شدن
+ * چرخهٔ عمر: ثبت تعیین وقت دادگاه پذیرش وکالت‌ها رأی نهایی بسته‌شدن
  */
 
 const { JsonTable } = require('../storage');
@@ -104,7 +104,7 @@ function create({ complainantId, form, vakilPick }) {
   return rec;
 }
 
-// ---------- مهاجرت رکوردهای قدیمی (acceptedVakil تکی → دو-طرفه) ----------
+// ---------- مهاجرت رکوردهای قدیمی (acceptedVakil تکی دو-طرفه) ----------
 (function migrate() {
   let changed = false;
   for (const c of table.data) {
@@ -168,7 +168,7 @@ function setPendingDmMessage(c, msgId) {
   }
 }
 
-/** وکیلِ انتخابی پیشنهاد را پذیرفت → حالا نوبت تأیید شاکی است */
+/** وکیلِ انتخابی پیشنهاد را پذیرفت حالا نوبت تأیید شاکی است */
 function acceptPendingByVakil(c) {
   if (!c.pendingVakil || c.pendingVakil.status !== 'pending') return null;
   c.pendingVakil.status = 'awaiting_confirm';
@@ -211,7 +211,7 @@ function setPendingVakilAwaitingConfirm(c, { discordId, name, phone }) {
   return c.pendingVakil;
 }
 
-/** شاکی وکیل را تأیید کرد → وکیلِ رسمی سمت شاکی می‌شود */
+/** شاکی وکیل را تأیید کرد وکیلِ رسمی سمت شاکی می‌شود */
 function confirmPendingByPlaintiff(c) {
   if (!c.pendingVakil || c.pendingVakil.status !== 'awaiting_confirm') return null;
   const p = c.pendingVakil;
@@ -224,7 +224,7 @@ function confirmPendingByPlaintiff(c) {
 }
 
 /**
- * شاکی وکیل را رد کرد → وکیل حق درخواست مجدد ندارد و گزینه برای بقیه باز می‌شود
+ * شاکی وکیل را رد کرد وکیل حق درخواست مجدد ندارد و گزینه برای بقیه باز می‌شود
  * @param {boolean} opts.block فقط ردِ صریح شاکی وکیل را مسدود می‌کند؛ انقضای مهلت مسدود نمی‌کند
  */
 function rejectPendingByPlaintiff(c, { block = true } = {}) {
@@ -304,11 +304,11 @@ function sweepExpiredPending() {
   for (const c of table.data) {
     if (!c.pendingVakil) continue;
     if (c.pendingVakil.status === 'pending' && now > c.pendingVakil.expiresAt) {
-      // انقضای مهلت وکیل ← وکیل مسدود نمی‌شود؛ فقط پیشنهاد پاک و درخواست‌های تازه باز می‌شود
+ // انقضای مهلت وکیل وکیل مسدود نمی‌شود؛ فقط پیشنهاد پاک و درخواست‌های تازه باز می‌شود
       const p = respondPending(c, 'expired');
       swept.push({ case: c, pending: p, kind: 'vakil_expired' });
     } else if (c.pendingVakil.status === 'awaiting_confirm' && now > (c.pendingVakil.confirmExpiresAt || c.pendingVakil.expiresAt)) {
-      // انقضای مهلت تأیید ← وکیل مسدود نمی‌شود؛ فقط درخواست پاک و انتخاب مجدد باز می‌شود
+ // انقضای مهلت تأیید وکیل مسدود نمی‌شود؛ فقط درخواست پاک و انتخاب مجدد باز می‌شود
       const p = rejectPendingByPlaintiff(c, { block: false });
       swept.push({ case: c, pending: p, kind: 'confirm_expired' });
     }
@@ -366,7 +366,7 @@ function closeWithRuling(c, { outcome, text, judgeId }) {
   table.save();
 }
 
-/** ایندکس پیام → پرونده (برای هندل دکمه‌های زیر پیام پرونده) */
+/** ایندکس پیام پرونده (برای هندل دکمه‌های زیر پیام پرونده) */
 function indexMessage(msgId, caseNumber) {
   state.data.msgIndex[msgId] = caseNumber;
   state.save();
