@@ -6,7 +6,7 @@ rem   1. Node.js (auto-download + silent install if missing)
 rem   2. npm dependencies (npm install)
 rem   3. Slash command registration
 rem   4. Auto SSL certificate for SSL_DOMAIN in .env
-rem   5. Runs the bot with auto-restart on crash
+rem   5. Runs the bot ONCE. Closing this window (X) or Ctrl+C stops everything.
 chcp 65001 >nul
 title ParadiseRP Complaint Bot [SETUP]
 mode con: cols=100 lines=40
@@ -155,18 +155,11 @@ echo [OK] Commands registered.
 echo.
 
 :cmdready
-rem ---- Step 4: Watchdog - scheduled task (auto-revive when bot goes offline) ----
-echo [SETUP] Registering watchdog task (auto-restart when bot goes offline)...
+rem ---- Step 4: NO auto-restart - make sure no watchdog task exists ----
+echo [SETUP] Removing any old auto-restart watchdog task...
 schtasks /Delete /TN "ParadiseBotWatchdog" /F >nul 2>&1
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0watchdog-register.ps1"
-if errorlevel 1 (
-    echo [WARN] Watchdog task could not be registered - auto-revive after
-    echo        reboot will not work. Restart-in-window still works.
-) else (
-    schtasks /Change /TN "ParadiseBotWatchdog" /ENABLE >nul 2>&1
-    echo [OK] Watchdog active - checks every 1 minute, revives the bot
-    echo      automatically if it goes offline, even after VPS reboot.
-)
+schtasks /Change /TN "ParadiseBotWatchdog" /DISABLE >nul 2>&1
+echo [OK] No auto-restart. The bot runs only while this window stays open.
 echo.
 
 rem ---- Sanity: node must exist right before running (prevents 9009 restart-loop) ----
@@ -181,46 +174,30 @@ echo [%time%] Starting bot... live logs below:
 echo      (first run with SSL_DOMAIN may take up to a minute for the certificate)
 echo ------------------------------------------------------------
 title ParadiseRP Complaint Bot [RUNNING]
-set CRASHES=0
+rem (no crash counter / no auto-restart - the bot runs once per start.bat)
 
-:run
 node index.js
 set RC=%errorlevel%
 if "%RC%"=="130" (
     echo.
-    echo [INFO] Bot stopped by user. You can close this window.
-    pause
-    exit /b 0
+echo [INFO] Bot stopped by user. Everything closed - nothing restarts by itself.
+exit /b 0
 )
 if "%RC%"=="2" (
     echo.
-    echo [ERROR] The bot is ALREADY RUNNING in another window!
-    echo         Close that window first, then close this one.
-    pause
-    exit /b 2
+echo [ERROR] The bot is ALREADY RUNNING in another window!
+echo         Close that window first, then run start.bat again.
+exit /b 2
 )
 if "%RC%"=="3" (
     echo.
-    echo [ERROR] Invalid bot token!
-    echo         1. Press Reset Token in the Discord Developer Portal
-    echo         2. Paste the new token into .env on the BOT_TOKEN line
-    echo         3. Save .env and run start.bat again
-    pause
-    exit /b 3
-)
-rem ---- Guard against infinite crash-restart loop: stop after 3 consecutive crashes ----
-set /a CRASHES+=1
-if %CRASHES% GEQ 3 (
-    echo.
-    echo [ERROR] Bot crashed %CRASHES% times in a row! Auto-restart stopped.
-    echo         Read the last error above, fix it, then run start.bat again.
-    pause
-    exit /b 1
+echo [ERROR] Invalid bot token!
+echo         1. Press Reset Token in the Discord Developer Portal
+echo         2. Paste the new token into .env on the BOT_TOKEN line
+echo         3. Save .env and run start.bat again
+exit /b 3
 )
 echo.
-echo [%time%] [WARN] Bot stopped! (crash %CRASHES%/3) Restarting in 5 seconds...
-echo        Close this window to shut it down completely.
-title ParadiseRP Complaint Bot [OFFLINE - restarting...]
-ping -n 6 127.0.0.1 >nul
-title ParadiseRP Complaint Bot [RUNNING]
-goto run
+echo [%time%] [ERROR] The bot crashed (exit code %RC%). Fix the issue,
+echo        then run start.bat again.
+pause & exit /b %RC%
